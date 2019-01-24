@@ -1,0 +1,370 @@
+<template>
+    <div class='mainropt'>
+      <el-tabs  v-model="editableTabsValue" @tab-click="handleClick">
+        <el-tab-pane label="医嘱执行清单">
+          <div class="pro-top">
+            <span>日期</span>
+            <el-date-picker v-model="startTime" type="date" value-format='yyyy-MM-dd' format='yyyy-MM-dd' placeholder=""></el-date-picker>&nbsp;&nbsp;
+            <!--<span>&nbsp;&nbsp;至</span>-->
+            <!--<el-date-picker v-model="endTime" type="date" value-format='yyyy-MM-dd' format='yyyy-MM-dd' placeholder=""></el-date-picker>&nbsp;&nbsp;-->
+            <el-radio-group v-model="order">
+              <el-radio :label="0">全部</el-radio>
+              <el-radio :label="1">长期医嘱</el-radio>
+              <el-radio :label="2">临时医嘱</el-radio>
+            </el-radio-group>
+            <el-button size="small"  type="primary" @click='getData' style="margin-left: 20px;padding: 9px 25px;">搜索</el-button>
+            <el-button size="small"  type="success" @click='getData' style="margin-left: 10px;padding: 9px 25px;">刷新</el-button>
+          </div>
+          <div class="pro-top pro-top2" :style="{height:height_default}">
+            <el-button type='text' style='margin-right: 10px' @click='heightToggle'>{{height_default == "40px" ? '展开' :'收起'}}</el-button>
+            <el-checkbox :indeterminate="isIndeterminate" v-model="checkAll" @change="handleCheckAllChange">全选</el-checkbox>
+            <el-checkbox-group v-model="checkedCities" @change="handleCheckedCitiesChange">
+              <el-checkbox v-for="item in medicaladvice_type_list" :label="item.ID" :key="item.ID">{{item.VAL}}</el-checkbox>
+            </el-checkbox-group>
+            <!--<span style="padding: 0 15px;color: #D8E3E7">|</span>-->
+
+
+          </div>
+          <div style='display: flex'>
+            <div class="pro-le">
+              <!--<div style="line-height: 50px;background: #F9F9FB;">-->
+                <!--<el-select v-model="value2" placeholder="全部科室" size="small">-->
+                  <!--<el-option v-for="item in options" :key="item.ID" :label="item.NAME" :value="item.ID" ></el-option>-->
+                <!--</el-select>-->
+                <!--<el-input v-model="input" placeholder="请输入内容" size="small"></el-input>-->
+                <!--<el-button icon="el-icon-search" type="primary"  size="mini" @click='departSel'></el-button>-->
+              <!--</div>-->
+              <el-table border ref="multipleTable" :data="inhospital_patient_list" tooltip-effect="dark" style="width: 100%" @selection-change="handleSelectionChange">
+                <el-table-column type="selection" width="32"></el-table-column>
+                <el-table-column label="床号" min-width="52">
+                  <template slot-scope="scope">{{ scope.row.BED_NUMBER }}</template>
+                </el-table-column>
+                <el-table-column prop="NAME" label="姓名" min-width="84"></el-table-column>
+                <el-table-column prop="DEPARTMENT" label="科室" min-width="84" show-overflow-tooltip></el-table-column>
+              </el-table>
+            </div>
+            <inforRight :medicaladvice_list="medicaladvice_list"></inforRight>
+          </div>
+        </el-tab-pane>
+
+        <el-tab-pane label="医嘱执行记录">
+          <div class="pro-top">
+            <span>日期</span>
+            <el-date-picker v-model="startTime" type="date" value-format='yyyy-MM-dd' format='yyyy-MM-dd' placeholder=""></el-date-picker>&nbsp;&nbsp;
+            <!--<span>&nbsp;&nbsp;至</span>-->
+            <!--<el-date-picker v-model="endTime" type="date" value-format='yyyy-MM-dd' format='yyyy-MM-dd' placeholder=""></el-date-picker>&nbsp;&nbsp;-->
+            <el-radio-group v-model="order">
+              <el-radio :label="0">全部</el-radio>
+              <el-radio :label="1">长期医嘱</el-radio>
+              <el-radio :label="2">临时医嘱</el-radio>
+            </el-radio-group>
+            <el-button size="small"  type="primary" @click='getData' style="margin-left: 20px;padding: 9px 25px;">搜索</el-button>
+            <el-button size="small"  type="success" @click='getData' style="margin-left: 10px;padding: 9px 25px;">刷新</el-button>
+          </div>
+          <div class="pro-top pro-top2" :style="{height:height_default}">
+            <el-button type='text' style='margin-right: 10px' @click='heightToggle'>{{height_default == "40px" ? '展开' :'收起'}}</el-button>
+            <el-checkbox :indeterminate="isIndeterminate" v-model="checkAll" @change="handleCheckAllChange">全选</el-checkbox>
+            <el-checkbox-group v-model="checkedCities" @change="handleCheckedCitiesChange">
+              <el-checkbox v-for="item in medicaladvice_type_list" :label="item.ID" :key="item.ID">{{item.VAL}}</el-checkbox>
+            </el-checkbox-group>
+            <!--<span style="padding: 0 15px;color: #D8E3E7">|</span>-->
+
+          </div>
+          <div style='display: flex'>
+            <div class="pro-le">
+              <!--<div style="line-height: 50px;background: #F9F9FB;">-->
+                <!--<el-select v-model="value2" placeholder="全部科室" size="small">-->
+                  <!--<el-option v-for="item in options" :key="item.ID" :label="item.NAME" :value="item.ID"></el-option>-->
+                <!--</el-select>-->
+                <!--<el-input v-model="input" placeholder="请输入内容" size="small"></el-input>-->
+                <!--<el-button icon="el-icon-search" type="primary"  size="mini" @click='departSel'></el-button>-->
+              <!--</div>-->
+              <el-table border ref="multipleTable" :data="inhospital_patient_list" tooltip-effect="dark" style="width: 100%" @selection-change="handleSelectionChange">
+                <el-table-column type="selection" min-width="32"></el-table-column>
+                <el-table-column label="床号" min-width="52">
+                  <template slot-scope="scope">{{ scope.row.BED_NUMBER }}</template>
+                </el-table-column>
+                <el-table-column prop="NAME" label="姓名" min-width="84"></el-table-column>
+                <el-table-column prop="DEPARTMENT" label="科室" min-width="84" show-overflow-tooltip></el-table-column>
+              </el-table>
+            </div>
+            <billingInfor :execRecord="execRecord"></billingInfor>
+          </div>
+        </el-tab-pane>
+      </el-tabs>
+
+    </div>
+</template>
+<script>
+  import {_YMD} from "@/global";
+  import inforRight from './inforRight'
+  import billingInfor from './billingInfor'
+    export default{
+
+      components:{ inforRight ,billingInfor},
+
+      data(){
+          return {
+            checkAll: false,
+            checkedCities: [],
+            medicaladvice_type_list: [],
+            isIndeterminate: false,
+            medicaCheck:[],
+            value2:'',
+            options:[],
+            startTime: "",
+            endTime: "",
+            editableTabsValue: '0',
+
+            order: 0,
+            input: "",
+            inhospital_patient_list: [],
+            selecData:[],
+            medicaladvice_list:[],
+            execRecord:[],
+            check_inpatient_number:[],
+            checks:false,
+            start_end_time:[],
+            res:[],
+            title:"医嘱执行清单",
+            height_default:'40px'
+          }
+      },
+
+      mounted(){
+        this.$nextTick(()=> {
+          document.oncontextmenu = event => {  event.preventDefault()  }
+          this.departSel()
+          this.startTime = _YMD()
+          this.endTime = _YMD()
+      })
+      },
+
+      methods: {
+        departSel() {
+          this.getSer("datacenter/medicaladvice/departments",{ward_id:decodeURIComponent(this.getCookieVal("ward_id"))},res=>{
+            this.options = res.data.items
+          }),
+          this.getSer("datacenter/bed",{ filterfuc : 'in_hospital_bed_count' , page_size : 1000 , page : 1 , is_onlyprimary : 0, inpatient_number : '' }, res => {
+            if(res.status <= 400) this.inhospital_patient_list = res.data.items
+          })
+          this.getSer("datacenter/medicaladvice/get-type",{},res=>{
+            if(res.status <= 400) this.medicaladvice_type_list = res.data.items
+          })
+        },
+        handleCheckAllChange(val) {
+          this.checkedCities = val ? val : []
+          this.isIndeterminate = false;
+          if(val==true){
+            this.checks=true  //全选
+          }else {
+            this.checks=false
+          }
+        },
+        handleCheckedCitiesChange(value) {
+          this.medicaCheck=value
+
+          let checkedCount = value.length;
+          this.checkAll = checkedCount === this.medicaladvice_type_list.length;
+          this.isIndeterminate = checkedCount > 0 && checkedCount < this.medicaladvice_type_list.length;
+
+          if( this.isIndeterminate == false){
+            this.checks=true  //全选
+          }else {
+            this.checks=false
+          }
+        },
+        handleClick(tab, event) {
+          this.title = tab.label
+        },
+        //获取列表
+        getData(){
+          let obj = {}
+          let typeCheck = ''
+          if(this.checks==true){
+            typeCheck = ''
+          }else {
+            typeCheck=JSON.stringify(this.medicaCheck)
+          }
+          obj ={
+            check_inpatient_number:JSON.stringify(this.check_inpatient_number),
+            aging:this.order,
+            type:typeCheck,
+            begin:this.startTime
+          }
+          if(this.title =='医嘱执行清单'){
+            console.log("医嘱执行清单")
+            this.getSer("datacenter/medicaladvice",obj,res=>{
+              if(res.status == 200){
+                this.res = res.data.items;
+                this.dealTable();
+              }
+            })
+
+          }else {
+            console.log("医嘱记录")
+            let objre = {}
+            objre ={
+              check_inpatient_number:JSON.stringify(this.check_inpatient_number),
+              aging:this.order,
+              type:typeCheck,
+              begin:this.startTime,
+              end:this.endTime,
+            };
+            this.getSer("datacenter/medicaladvice/records",objre,res=>{
+              if(res.status == 200){
+              this.execRecord = res.data.items;
+            }
+          })
+          }
+        },
+
+        dealTable(){
+          let groupIndex = [0] // 保存类型需要合并的值
+          let a = 1
+
+          this.res.forEach((v, index, arr)=> {
+            if((index+1) == this.res.length) {
+              groupIndex.push(a);
+            }else if(arr[index]['LIST_ID'] != arr[index+1]['LIST_ID']){
+              groupIndex.push(a);
+              a = 1;
+            }else {
+              a++;
+            }
+          })
+          console.log('groupIndex', groupIndex)
+          // 根据这个规则,只需要给数据加上两个额外的属性控制是否合并就OK
+          let k = 0
+          groupIndex.forEach((v, i, nameArr) => {
+            if (nameArr[i + 1]) {
+              this.res[k].INDEX = nameArr[i + 1]
+              k += nameArr[i + 1]
+            }
+          })
+          this.medicaladvice_list = this.res;
+        },
+
+        handleSelectionChange(val) {
+
+          this.selecData = val;
+          this.check_inpatient_number = []  //重新初始化
+          this.selecData.forEach(item=>{
+            this.check_inpatient_number.push(item.INPATIENT_NUMBER)
+          })
+
+          let typeCheck = ''
+          if(this.checks==true){
+            typeCheck = ''
+          }else {
+            typeCheck=JSON.stringify(this.medicaCheck)
+          }
+          console.log(this.check_inpatient_number)
+          let obj = {}
+           obj = {
+              check_inpatient_number:JSON.stringify(this.check_inpatient_number),
+             aging:this.order,
+             type:typeCheck,
+             begin:this.startTime,
+             end:this.endTime,
+          }
+          if(this.title =='医嘱执行清单'){
+            this.getSer("datacenter/medicaladvice",obj,res=>{
+              if(res.status == 200){
+                this.res = res.data.items
+                this.dealTable()
+              }
+          })
+
+          }else {
+            console.log("医嘱记录")
+
+            let objre ={
+              check_inpatient_number:JSON.stringify(this.check_inpatient_number),
+              aging:this.order,
+              type:typeCheck,
+              begin:this.startTime,
+              end:this.endTime,
+            };
+            this.getSer("datacenter/medicaladvice/records",objre,res=>{
+              if(res.status == 200){
+              this.execRecord = res.data.items;
+            }
+          })
+          }
+        },
+        heightToggle(){
+          this.height_default = this.height_default == '40px' ? '80px' : '40px'
+        }
+
+
+      },
+
+
+    }
+</script>
+<style scoped lang='stylus'>
+  .mainropt
+    margin 20px
+    .el-tabs
+      &>>>.el-tabs__item
+        background-color #DDEFF9
+        line-height 36px
+        height 36px
+        padding 0 26px
+        margin-left 10px
+        border-radius 4px 4px 0 0
+      &>>> #tab-0 span
+        display none
+      &>>>.is-active
+        background-color #FFFFFF
+        color #666
+      &>>>.el-tabs__active-bar
+        display none
+      &>>>.el-tabs__nav-wrap:after
+        display none
+      &>>>.el-tabs__header
+        margin 0
+      &>>>.el-tabs__content
+        background-color #FFFFFF
+        min-height 660px
+        border-radius 4px 4px 0 0
+    .pro-top2
+      display flex
+      overflow hidden
+    .pro-top
+      background #fff
+      height 40px
+      line-height 40px
+      border-bottom 1px solid #D8E3E7
+      padding 0 20px
+      .el-date-editor
+        width 136px
+        margin-left 10px
+        &>>>.el-input__inner
+          line-height 32px
+          height 32px
+      .el-checkbox-group
+        display inline-block
+        .el-checkbox
+          margin-left 15px
+    .pro-le
+      width 260px
+      min-height 500px
+      background #fff
+      .el-select
+        width 110px
+        margin-left 10px
+      .el-input
+        width 100px
+      .el-table >>> .has-gutter tr th
+        background #DDEFF9
+        padding 3px 0
+        border-right 1px solid #A5DDE9
+        color #2B3A50
+      .el-table >>> .el-table__body-wrapper tr td
+        padding 3px 0
+      .el-table >>> .el-table__row tr td
+        border-right none
+
+</style>

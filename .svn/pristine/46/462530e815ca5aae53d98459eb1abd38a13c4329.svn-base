@@ -1,0 +1,163 @@
+<template>
+  <el-dialog :visible.sync="viewdialogFormVisible" width='1200px'>
+
+    <el-tabs type="border-card" title='打印样式' v-if='viewdialogFormVisible' @tab-click="handleClick">
+      <el-tab-pane label="HTML">
+        <el-input type='textarea' v-model='TEMPLATE_HTML' @change='change'></el-input>
+      </el-tab-pane>
+
+      <el-tab-pane label="可视化">
+        <!--<el-input class="text"  placeholder="" v-model="TEMPLATE_ID"></el-input>-->
+        <div style='display: flex;' >
+          <ul style='width: 200px;margin-right: 15px; max-height: 400px;overflow-y: auto;position: fixed;'>
+            <li v-for='node of NODES' :data-id='node.id' draggable="true"  @dragstart='drag($event,node.id)'>{{node.name}}</li>
+          </ul>
+          <templatejs class="preview" id='preview' ref='preview' v-if='TEMPLATE_HTML' :TEMPLATE_HTML='TEMPLATE_HTML' style='margin-left: 230px; width: calc(100% - 230px);overflow-x: auto;'></templatejs>
+          <!--v-html="TEMPLATE_HTML"-->
+        </div>
+      </el-tab-pane>
+
+      <el-tab-pane label="预览" name="preview-tab">
+        <div class="preview" v-html="TEMPLATE_HTML_PREVIEW"></div>
+      </el-tab-pane>
+
+    </el-tabs>
+
+    <div slot="footer" class="dialog-footer">
+      <el-button type="primary" @click='submit'>保存</el-button>
+    </div>
+
+  </el-dialog>
+
+
+</template>
+
+<script>
+
+  import listPreviewDoc from './listPreviewDoc'
+  import templatejs from './templatejs'
+
+    export default {
+
+        name: "printSet",
+
+        components:{listPreviewDoc,templatejs},
+
+        data(){
+          return{
+            viewdialogFormVisible : false,
+            TEMPLATE_HTML: '',
+            TEMPLATE_HTML_PREVIEW: '',
+            TEMPLATE_ID: '',
+            activeName : 'first',
+            popshow : false,
+            NODES:[],
+            MyComponent:''
+          }
+        },
+
+        methods:{
+          //获取打印模版数据
+          getData(id){
+            this.getSer("datacenter/tempstyle/"+id , { id },res => {
+              console.log("获取打印模版++++++")
+              console.log(res)
+              this.viewdialogFormVisible = true
+              this.TEMPLATE_ID = id
+              this.TEMPLATE_HTML = res.data.content
+              this.popshow = true
+            })
+            this.getSer('datacenter/template/'+id,{ id },res=>{
+              console.log(res);
+              this.NODES = []
+              if(res.status<400){
+                res.data.NODES.forEach(item=>{
+                  this.recursionNode(item)
+                })
+              }
+              console.log(this.NODES);
+            })
+
+          },
+          change(){
+            this.$refs.preview.h()
+          },
+          drag(e,id){
+            e.dataTransfer.setData("Text",id)
+          },
+          recursionNode(nodes){
+            this.NODES.push({ 'id': nodes.ID , name : nodes.NODE_NAME})
+            if(nodes.CHILDS.length == 0){
+              return
+            }else{
+              nodes.CHILDS.forEach(child=>{
+                this.recursionNode(child)
+              })
+
+            }
+          },
+
+          handleClick(tab, event){
+            console.log(tab, event);
+            if(tab.label == '预览'){
+              this.preview()
+            }else if(tab.label == '可视化'){
+              // this.creatComponent()
+            }else if(tab.label == 'HTML'){
+              this.TEMPLATE_HTML = new String(document.getElementById('preview').innerHTML)
+            }
+          },
+
+          //保存打印模版
+          submit(){
+            this.TEMPLATE_HTML = new String(document.getElementById('preview').innerHTML)
+            var obj = {TEMPLATE_ID : this.TEMPLATE_ID, TEMPLATE_HTML: this.TEMPLATE_HTML}
+            console.log(obj);
+            this.post('datacenter/tempstyle' , obj , res => {
+              console.log("保存打印模版++++++")
+              console.log(res);
+
+              if(res.data.status == 201){
+                this.$message({
+                  message: res.data.message,
+                  duration:1000,
+                  type: 'success'
+                });
+                this.viewdialogFormVisible = false
+              }
+            })
+          },
+
+          //动态预览，将html传给接口，接口过滤标签后返回
+          preview(){
+            var previewobj = {TEMPLATE_ID : this.TEMPLATE_ID, TEMPLATE_HTML: new String(document.getElementById('preview').innerHTML)}
+
+            this.post('datacenter/tempstyle/preview' , previewobj, res => {
+              console.log("获取打印预览++++++")
+              console.log(res);
+              if(res.data.code == 200){
+                this.activeName = 'preview-tab'
+                this.TEMPLATE_HTML_PREVIEW = res.data.content
+              }
+            })
+          }
+        },
+
+        mounted(){
+          this.$nextTick(()=>{
+
+          })
+        }
+    }
+</script>
+
+<style scoped lang='stylus'>
+  .el-tabs
+    &>>>.el-tabs__content
+      height 540px
+      overflow-y auto
+  .el-textarea
+    &>>>.el-textarea__inner
+      height 500px
+      resize none
+</style>

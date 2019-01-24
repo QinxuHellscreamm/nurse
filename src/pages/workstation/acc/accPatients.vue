@@ -1,0 +1,146 @@
+<template>
+  <div style='margin: 0 20px;'>
+    <div class="out-top">
+      <el-select v-model="is_self_ward" placeholder="" style="margin-right:10px">
+        <el-option v-for="item in authorParts" :key="item.value" :label="item.label" :value="item.value"></el-option>
+      </el-select>
+      <el-date-picker
+        v-model="start_end_time"
+        value-format="yyyy-MM-dd"
+        type="daterange"
+        align="right"
+        unlink-panels
+        range-separator="至"
+        start-placeholder="开始日期"
+        end-placeholder="结束日期">
+      </el-date-picker>
+      <button class="btn-small" @click='getData'>搜索</button>
+      <button class="btn-small" style="float:right" @click='endGrant'>结束授权</button>
+      <div style="float:right;">
+        <button @click="add" class="btn-small color-green" style="float:right;margin-right: 0;">新增授权</button>
+      </div>
+    </div>
+    <div class="out-main" style="width:100%;padding: 5px 10px;">
+      <el-table :data="accData"  style="width: 100%" @row-click="select_patient_id" >
+        <el-table-column fixed prop="GRANT_NURSE" label="授权人" min-width="100"></el-table-column>
+        <el-table-column prop="WARD_NAME" label="被授权病区" min-width="120"></el-table-column>
+        <el-table-column prop="BE_GRANT_NURSE" label="被授权人" min-width="100"></el-table-column>
+        <el-table-column prop="PATIENT.BED_NUMBER" label="床号" min-width="80"></el-table-column>
+        <el-table-column prop="PATIENT.NAME" label="姓名" min-width="100" >
+          <template slot-scope="scope">
+            <span class='name' @click.stop='showDOC(scope.row)' v-if="scope.row.IS_CLICK==1">{{scope.row.PATIENT.NAME}}</span>
+            <span v-else >{{scope.row.PATIENT.NAME}}</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="PATIENT.SEX"  label="性别" min-width="80"></el-table-column>
+        <el-table-column prop="PATIENT.AGE" label="年龄" min-width="80"></el-table-column>
+        <el-table-column prop="PATIENT.MEDICAL_RECORD_NUM" label="住院号" min-width="120"></el-table-column>
+        <el-table-column prop="PATIENT.DIAGNOSTIC_RESULTS" label="入院诊断" min-width="150"></el-table-column>
+        <el-table-column prop="PATIENT.DOCTOR" label="主治医师" min-width="100"></el-table-column>
+        <el-table-column prop="PATIENT.HOSPITALIZED_DATE" label="入院日期" min-width="160"></el-table-column>
+        <el-table-column prop="START_AT" label="授权时间" min-width="160"></el-table-column>
+        <el-table-column prop="END_AT" label="结束授权时间" min-width="160"></el-table-column>
+        <el-table-column prop="REMARKS" label="备注" min-width="130"></el-table-column>
+      </el-table>
+      <div style="margin:20px 0;">
+        <el-pagination
+          background
+          @current-change="handleCurrentChange"
+          :current-page="currentPage"
+          :page-size="20"
+          layout="total, prev, pager, next, jumper"
+          :total="adicsCount">
+        </el-pagination>
+      </div>
+      <add-acc ref='addAcc'></add-acc>
+    </div>
+  </div>
+</template>
+<script>
+  import addAcc from "./addAccPop.vue"
+  export default{
+    components : { addAcc },
+
+    data() {
+      return {
+        currentPage : 1,
+        adicsCount :0,
+        authorParts: [{ value: '0' , label: '给出授权' },{ value: '1' , label: '接收授权'}],
+        is_self_ward : '1',
+        start_end_time: '',
+        accData: [],
+        to_be_end_id:0,  //待结束
+      };
+    },
+
+    mounted(){
+        this.$nextTick(()=> {
+          this.getData();
+        })
+    },
+
+    methods : {
+        //获取列表
+        getData(){
+          let obj = {
+            'is_self_ward' : this.is_self_ward ,
+            'start_time' : this.start_end_time ? this.start_end_time[0] : '' ,
+            'end_time' : this.start_end_time ? this.start_end_time[1] : '' ,
+            'page' : this.currentPage,
+            'page_size' : 20
+          }
+          this.getSer("datacenter/grantpatient", obj , (res) => {
+            console.log(res)
+            if(res.status <= 400){
+              this.accData = res.data.items;
+              this.adicsCount = res.data.meta.totalCount
+            }
+          })
+        },
+        add(){
+
+          this.$refs.addAcc.init()
+        },
+        //当前页发生改变的时候
+        handleCurrentChange(val) {
+          this.getData(val);
+        },
+        select_patient_id(val){
+            this.to_be_end_id=val.ID;
+            console.log(this.to_be_end_id);
+        },
+        showDOC(data){
+          console.log('showDOC',data)
+          this.$parent.judgePath({title : '授权-'+data.PATIENT.NAME , path : '/workstation/GrantpatientDOC/' + data.PATIENT.ID, name:'patientDOC' , id : data.PATIENT.ID})
+          this.$router.push('/workstation/GrantpatientDOC/' + data.PATIENT.ID)
+            this.$route.params.grant_id = data.ID
+        },
+        //结束授权
+        endGrant(){
+            if (!this.to_be_end_id)
+            {
+                this.$message({type : 'warning',message : '请选择授权病人'});
+                return false
+            }
+            this._put('datacenter/grantpatient/'+this.to_be_end_id,{id:this.to_be_end_id}, res =>{
+                if(res.status == 201){
+                    this.getData()
+                    this.$message({
+                        type : 'success',
+                        message : res.data.message
+                    });
+                }
+            })
+        }
+    },
+  }
+</script>
+<style scoped lang='stylus'>
+  .name
+    text-decoration underline
+    color #00B3DC
+    cursor pointer
+  .btn-small
+    margin-left 10px
+    margin-right 0
+</style>

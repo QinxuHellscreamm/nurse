@@ -1,0 +1,82 @@
+<template>
+  <div class="sidebar">
+    <ul class="sidelist">
+      <router-link tag="li" v-for="(item,index) of sideList" :class="classes[index]" :to="{path:'/managePlatform/'+item.url}" :key="index">{{item.name}}</router-link>
+    </ul>
+  </div>
+</template>
+<script>
+  export default{
+    data(){
+      return {
+        sideList: [
+          // {name: "实时统计", url: "realTime"},
+           {name: "文书管理", url: "DocumentAdmin"},
+           {name: "智能排班", url: "scheduling"},
+           // {name: "人事管理", url: "nurse"},
+           {name: "不良事件", url: "adverseEvent"},
+           // {name: "床位使用情况", url: "bedSituation"},
+           {name: "敏感指标分析", url: "sensitive"},
+           {name: "ICU敏感指标", url: "ICUsensitive"},
+           // {name: "护士绩效考核", url: "assessment"},
+           // {name: "护理满意度", url: "satisfied"},
+           // {name: "护理全息视图", url: "hologView"},
+        ],
+        classes: ["DocumentAdmin","realTime","scheduling","nurse","adverseEvent","bedSituation","sensitive","ICUsensitive","assessment","satisfied","hologView"],
+      }
+    },
+  }
+</script>
+<style scoped lang="stylus">
+  .sidebar
+    width 184px
+    height calc(100% - 60px)
+    background #2F4263
+    padding-top 42px
+    text-align center
+    color #fff
+    -webkit-box-sizing border-box
+    -moz-box-sizing border-box
+    box-sizing border-box
+    position fixed
+    left 0
+    top 60px
+    z-index 900
+    .sidelist
+      li
+        line-height 50px
+        padding-left 70px
+        text-align left
+        cursor pointer
+        background-size 18px 20px
+        font-size 16px
+      .router-link-active
+        background-color #1C2E4C !important
+        a
+          color #fff
+          display inline-block
+          width 114px
+          height 64px
+      .adverseEvent
+        background url("icon/adverseEvent.png") no-repeat 26px center
+        background-size 18px 18px !important
+      .nurse
+        background url("icon/nurse.png") no-repeat 26px center
+      .realTime
+        background url("icon/realTime.png") no-repeat 26px center
+      .bedSituation
+        background url("icon/bedSituation.png") no-repeat 26px center
+      .sensitive
+        background url("icon/sensitive.png") no-repeat 26px center
+      .ICUsensitive
+        background url("icon/ICUsensitive.png") no-repeat 26px center
+      .scheduling
+        background url("icon/scheduling.png") no-repeat 26px center
+      .assessment
+        background url("icon/assessment.png") no-repeat 26px center
+      .satisfied
+        background url("icon/satisfied.png") no-repeat 26px center
+      .hologView
+        background url("icon/hologView.png") no-repeat 26px center
+
+</style>

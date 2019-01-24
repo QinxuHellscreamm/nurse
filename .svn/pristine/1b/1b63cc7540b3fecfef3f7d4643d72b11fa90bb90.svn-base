@@ -1,0 +1,142 @@
+import Vue from 'vue'
+
+Vue.filter('Sub_IPNT_TYPE',function(val) {
+    switch (val) {
+      case 1:
+        return '数字'
+        break
+      case 2:
+        return '文本'
+        break
+      case 3:
+        return '日期'
+        break
+      case 4:
+        return '月份'
+        break
+      case 5:
+        return '时间'
+        break
+      default :
+        return '未定义'
+        break
+    }
+})
+
+Vue.filter('Sub_TYPE',function(val) {
+  switch (val) {
+    case 1:
+      return '无'
+      break
+    case 2:
+      return '单行文本'
+      break
+    case 3:
+      return '多行文本'
+      break
+    case 4:
+      return '单选'
+      break
+    case 5:
+      return '多选'
+      break
+    case 6:
+      return '下拉筛选'
+      break
+    case 7:
+      return '可输可下拉筛选'
+      break
+    case 8:
+      return '选择并输入'
+      break
+    default :
+      return '未定义'
+      break
+  }
+})
+
+Vue.filter('stampTotime',function(stamp){
+    if (!stamp || stamp == '0') return ''
+    let setZero = (num) => {
+        return num < 10 ? '0' + num : num;
+    }
+    let date = new Date(stamp * 1000);
+    let Y = date.getFullYear() + '-';
+    let M = setZero(date.getMonth() + 1) + '-';
+    let D = setZero(date.getDate())+ ' ';
+    let h = setZero(date.getHours()) + ':';
+    let m = setZero(date.getMinutes()) + ':';
+    let s = setZero(date.getSeconds());
+    return Y+M+D+h+m+s;
+
+})
+
+Vue.filter('rank',function(stamp){
+  if (stamp == '2') return 'I'
+  if (stamp == '3') return 'II'
+  if (stamp == '4') return 'III'
+  if (stamp == '1') return '特'
+})
+
+Vue.filter('noticingPointName',function(stamp){
+    if (stamp == '1') return '0:00'
+    if (stamp == '2') return '3:00'
+    if (stamp == '3') return '早餐前'
+    if (stamp == '4') return '早餐后'
+    if (stamp == '5') return '午餐前'
+    if (stamp == '6') return '午餐后'
+    if (stamp == '7') return '晚餐前'
+    if (stamp == '8') return '晚餐后'
+    if (stamp == '9') return '22:00'
+    if (stamp == '10') return '随机血糖'
+})
+
+Vue.filter('chineseNumber',function(stamp){
+  if (stamp == '1') return '一'
+  if (stamp == '2') return '二'
+  if (stamp == '3') return '三'
+  if (stamp == '4') return '四'
+  if (stamp == '5') return '五'
+  if (stamp == '6') return '六'
+  if (stamp == '7') return '七'
+  if (stamp == '8') return '八'
+  if (stamp == '9') return '九'
+  if (stamp == '10') return '十'
+  if (stamp == '11') return '十一'
+  if (stamp == '12') return '十二'
+  if (stamp == '13') return '十三'
+  if (stamp == '14') return '十四'
+  if (stamp == '15') return '十五'
+  if (stamp == '16') return '十六'
+  if (stamp == '17') return '十七'
+  if (stamp == '18') return '十八'
+  if (stamp == '19') return '十九'
+  if (stamp == '20') return '二十'
+})
+
+Vue.filter('nullfilter',function(stamp){
+  if (!stamp) return '无'
+})
+
+Vue.filter('yesorno',function(stamp){
+    if (stamp == '0') return '否'
+    if (stamp == '1') return '是'
+})
+
+Vue.filter('romeNumber',function(stamp){
+  if (stamp == '1') return 'Ⅰ'
+  if (stamp == '2') return 'Ⅱ'
+  if (stamp == '3') return 'Ⅲ'
+  if (stamp == '4') return 'Ⅳ'
+  if (stamp == '5') return 'Ⅴ'
+  if (stamp == '6') return 'Ⅵ'
+  if (stamp == '7') return 'Ⅶ'
+  if (stamp == '8') return 'Ⅷ'
+  if (stamp == '9') return 'Ⅸ'
+  if (stamp == '10') return 'Ⅹ'
+  if (stamp == '11') return 'Ⅺ'
+  if (stamp == '12') return 'Ⅻ'
+  if (stamp == '13') return 'XIII'
+  if (stamp == '14') return 'XIV'
+  if (stamp == '15') return 'XV'
+})

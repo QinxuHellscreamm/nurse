@@ -1,0 +1,142 @@
+<template>
+    <el-dialog :visible.sync="popshow" width='800px' title='体温单录入病人筛选'>
+      <div class='content'>
+        <div class='left'>
+          <el-checkbox  v-model="checkAll" @change="handleCheckAllChange" border style='width: 100%;border-radius:0'>全选</el-checkbox>
+          <el-checkbox-group v-model="checkedPatients" @change="handleCheckedCitiesChange">
+            <el-checkbox v-for="city in patients" :label="city.INPATIENT_NUMBER" :key="city.INPATIENT_NUMBER" border>{{city.NAME}}</el-checkbox>
+          </el-checkbox-group>
+        </div>
+        <div class='right'>
+          <el-button type='text'>常规测量</el-button>
+          <p>一天一次，时间为2pm</p>
+          <el-button type='text'>小儿常规测量（＞10岁）</el-button>
+          <p>一天两次，时间点为6am、2pm</p>
+          <el-button type='text'>体温异常（小儿体温异常+0.5℃）</el-button>
+          <p>
+            39℃以上，一天6次<br>
+            38℃以上，一天4次，时间点为6am、10am、2pm、6pm<br>
+            37.5℃以上，一天3次，时间点为6am、2pm、6pm<br>
+            出现异常体温的当天（测量次数少于以上次数不顺延）跟第二天按以上规则处理<br>
+          </p>
+          <el-button type='text'>体温正常后两天</el-button>
+          <p>若第二天体温都正常，第三第四天（一天测两次 6am、2pm）这两天后都正常，接着按常规测量（2pm）</p>
+          <el-button type='text'>术前</el-button>
+          <p>（录了明日手术）要加测6pm，手术当天加测6am</p>
+          <el-button type='text'>术后三天内</el-button>
+          <p>一天三次，时间点：6am、2pm、6pm，手术当天少于三次不顺延</p>
+          <el-button type='text'>新病人</el-button>
+          <p>新病人及转科病人前两天一天两次（6am、2pm），入院第一天如果少于两次，则向后顺延（如6pm入院，则加测10pm；10pm入院，则第二、三天都测两次）</p>
+        </div>
+      </div>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="popshow=false">取 消</el-button>
+        <el-button @click="save">保 存</el-button>
+      </div>
+    </el-dialog>
+</template>
+
+<script>
+    export default {
+        name: "patientScreen",
+
+        data(){
+          return{
+            checkAll : false,
+            popshow : false,
+            checkedPatients : [],
+            patients : [],
+            inpatient_numbers:[],
+            isIndeterminate : true,
+          }
+        },
+
+        methods:{
+          getData(){
+            this.getSer("datacenter/bed",{ filterfuc : 'in_hospital_bed_count' , page_size : 1000 , page : 1 , is_onlyprimary : 0, inpatient_number : '' }, res => {
+              console.log(res)
+              if(res.status <= 400) {
+                this.patients = res.data.items
+                this.patients.forEach(item=>{
+                  this.inpatient_numbers.push(item.INPATIENT_NUMBER)
+                })
+                console.log(this.inpatient_numbers)
+              }
+            })
+          },
+          handleCheckAllChange(val) {
+            console.log(val);
+            this.checkedPatients = val ? this.inpatient_numbers : []
+            this.isIndeterminate = false;
+          },
+          handleCheckedCitiesChange(value) {
+            console.log(value)
+            let checkedCount = value.length;
+            this.checkAll = checkedCount === this.patients.length
+            this.isIndeterminate = checkedCount > 0 && checkedCount < this.patients.length
+          },
+          save(){
+            this.$parent.inpatient_number = this.checkedPatients
+            this.popshow = false
+            this.$parent.getData()
+          }
+        },
+
+        mounted(){
+          this.$nextTick(()=>{
+            this.getData()
+          })
+        }
+    }
+</script>
+
+<style scoped lang='stylus'>
+  .content
+    display flex
+    .left
+      width 428px
+      .el-checkbox-group
+        border-radius 0
+        &>>>.el-checkbox
+          width 33.33%
+          border-radius 0
+          box-sizing border-box
+          border none
+          border-left 1px solid #dddddd
+          border-bottom 1px solid #dddddd
+          &:last-child
+            border-right 1px solid #dddddd
+          &:nth-child(3n)
+            border-right 1px solid #dddddd
+      .el-checkbox.is-bordered+.el-checkbox.is-bordered
+          margin-left 0
+          border-radius 0
+    .right
+      margin-left 40px
+      width 290px
+      height 528px
+      box-sizing border-box
+      border 1px solid #dddddd
+      padding 10px 18px
+      overflow auto
+      &::-webkit-scrollbar
+        width 6px
+      &::-webkit-scrollbar-thumb
+        -webkit-box-shadow inset 0 0 5px #00B3DC
+        background #00B3DC
+        border-radius 7px
+      &::-webkit-scrollbar-track
+        -webkit-box-shadow inset 0 0 5px rgba(0,0,0,0.2)
+        background-color #d8ebf4
+        border-radius 7px
+      &>>>.el-button--text
+        padding 5px 0
+        span
+          font-size 16px
+          color #00B3DC
+      p
+        padding 6px 0
+        line-height 24px
+        color #2B3A50
+
+</style>

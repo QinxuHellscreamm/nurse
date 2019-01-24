@@ -1,0 +1,22 @@
+<template>
+  <div>
+    <mainTab :vitalList="vitalList1" :tempss="templates" :page="page" ></mainTab>
+  </div>
+</template>
+<script>
+  import mainTab from '../../component/mainTab'
+
+  export default{
+    data(){
+      return {
+        vitalList1:["评估单题目" , "记录单题目" , "交接单题目","告知单"],
+        templates:['assessSub' , 'recordSub' , 'handoverSub','informSub'],
+        page:'documentAdmin/docSubjectAdmin'
+      }
+    },
+    components : { mainTab },
+  }
+</script>
+<style scoped>
+
+</style>

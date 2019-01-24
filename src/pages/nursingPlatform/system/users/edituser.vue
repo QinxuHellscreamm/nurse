@@ -1,0 +1,106 @@
+<template>
+  <div>
+
+    <el-dialog :title="name" :visible.sync="popshow" width='454px'>
+      <el-form ref="form" :model="form" label-width="5em">
+         <el-form-item label="用户姓名">
+           <span>{{form.REALNAME}}</span>
+         </el-form-item>
+         <el-form-item label="病　　区">
+           <div>{{form.WARD_NAMES}}</div>
+         </el-form-item>
+        <el-form-item label="角　　色">
+          <el-select v-model="form.PLUG_ID">
+            <el-option :label="item.GROUP_NAME" :value="item.ID" v-for="item of roles" :key='item.ID'></el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item label="登录账号">
+          <span>{{ form.USERNAME }}</span>
+        </el-form-item>
+        <el-form-item label="密　　码">
+          <el-input v-model="form.PASSWORD" placeholder="为空则不变更原始密码 6-16字节，不可重复" type='password'></el-input>
+        </el-form-item>
+        <el-form-item label="使用状态">
+          <el-radio-group v-model="form.STATUS">
+            <el-radio  label="1">启用</el-radio>
+            <el-radio  label="0">停用</el-radio>
+          </el-radio-group>
+        </el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="popshow=false">取 消</el-button>
+        <el-button @click="save">确 定</el-button>
+      </div>
+    </el-dialog>
+  </div>
+</template>
+<script>
+  export default{
+
+    data(){
+      return {
+        name : "编辑",
+        popshow : false,
+        moduleid : '',
+        form : {
+          id : "",
+          REALNAME : "",
+          WARD_NAMES : '',
+          PLUG_ID : '',
+          USERNAME : '',
+          PASSWORD : '',
+          STATUS : ''
+        },
+        roles : [],
+        isSelect:false
+      }
+    },
+
+    methods:{
+     getDetail(moduleid){
+       this.moduleid = moduleid
+       this.popshow = true
+       this.getSer('datacenter/nadmin/'+moduleid ,{ id : moduleid } , res => {
+         this.form.REALNAME = res.data.REALNAME
+         this.form.WARD_NAMES = res.data.WARD_NAMES
+         this.form.PLUG_ID = res.data.PLUG_ID
+         this.form.USERNAME = res.data.USERNAME
+         this.form.STATUS = res.data.STATUS + ''
+       })
+
+       this.getSer("datacenter/role",{ page : 1 , page_size : 200 }, res => {
+         this.roles = res.data.items;
+       })
+     },
+
+     save(){
+       this.popshow = false
+       this._put('datacenter/nadmin/' + this.moduleid , {...this.form,id:this.moduleid}, res => {
+          this.$message({message : res.data.message, duration : 1000, type : 'success'})
+          this.$parent.getUsers()
+       })
+     }
+   }
+  }
+</script>
+<style scoped lang='stylus'>
+  .dialog-footer
+    .el-button:last-of-type
+      background-color #00B3DC
+      color #fff
+      padding 13px 50px!important
+      border 0
+    .el-button:first-of-type
+      background-color #DDEFF9
+      color #00B3DC
+      padding 13px 20px!important
+      border 0
+  .el-select
+    width 310px
+  .el-select >>> .el-input__inner
+      background-color #F9F9FB
+  .el-input
+    width 310px
+  .el-input>>> .el-input__inner
+      background-color #F9F9FB
+</style>

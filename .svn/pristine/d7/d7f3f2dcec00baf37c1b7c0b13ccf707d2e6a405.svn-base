@@ -1,0 +1,107 @@
+<template>
+	<div>
+    <div class="search-bar">
+      <input type="search" placeholder="搜索生命体征"  @keyup.enter="getData" class="out-input marr20" v-model="keyword"/>
+      <button class="btn-small" @click="getData">搜索</button>
+    </div>
+    <div class="out-main">
+      <el-table :data="modelList" style="width: 100%">
+        <el-table-column fixed label="ID" prop="ID" min-width="60"></el-table-column>
+        <el-table-column fixed label="生命体征" prop="NAME" min-width="80"></el-table-column>
+        <el-table-column fixed label="单位" prop="UNIT" min-width="60"></el-table-column>
+       <!-- <el-table-column fixed label="输入类型编码" prop="INPUT_TYPE_CODE" min-width="60"></el-table-column>-->
+       <!-- <el-table-column fixed label="编辑时间" prop="UNIT" min-width="100"></el-table-column>-->
+        <el-table-column fixed label="输入类型" prop="INPUT_TYPE_CODE" min-width="100"></el-table-column>
+        <el-table-column label="护理措施" min-width="250">
+          <template slot-scope="scope">
+            <div v-for="(item, index) in scope.row.EVENTS" :key="index">
+              <span>事件{{index + 1 | chineseNumber}}</span>
+              <span v-for="(val, key) in item.CONDITIONS.items" :key="key">
+                <span>{{ val.symbol }} {{ val.val }}</span>
+                <span v-if="key != item.CONDITIONS['items'].length-1 ">{{ item.CONDITIONS['type']}}</span>
+              </span>
+              <span>(</span>
+              <span v-for='(id,i) of item.NURSING_MEASURES'>
+                <span>{{ costomNursingMeasures['id' + id] }} </span>
+                <span v-if='item.NURSING_MEASURES.length > 0 && i<item.NURSING_MEASURES.length-1'>,</span>
+              </span>
+              <span>)</span>
+            </div>
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" min-width="40">
+          <template slot-scope="{row}">
+            <el-button @click="showEdit(row)" type="text" size="small">编辑</el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+    </div>
+    <edit ref='edit' :nursingMeasures='nursingMeasures'></edit>
+    <div style="margin:20px 0;">
+      <el-pagination
+        background
+        @current-change="handleCurrentChange"
+        :current-page="currentPage1"
+        :page-size="pageSize"
+        layout="total, prev, pager, next, jumper"
+        :total="adicsCount">
+      </el-pagination>
+    </div>
+	</div>
+</template>
+<script>
+  import edit from './edit'
+	export default {
+    name: "signRelation",
+
+    data(){
+      return{
+        numberArr:['一','二','三','四','五','六','七','八','九'],
+        modelList:[],
+        keyword:'',
+        pageSize:20,
+        currentPage1:1,//当前页
+        adicsCount:0,//总数
+        nursingMeasures:[],
+        costomNursingMeasures:{}
+      }
+    },
+
+    mounted(){
+      this.$nextTick(() =>{
+        this.getData();
+      })
+    },
+
+    components : {edit},
+
+		methods: {
+      getData(){
+
+        this.getSer('datacenter/measurebank',{'page':1,'per-page':1000},res=>{
+          console.log(res);
+          this.nursingMeasures = res.data.items
+          res.data.items.forEach((item,i)=>{
+            this.costomNursingMeasures['id'+item.ID] = item.CONTENT
+          })
+          this.getSer('datacenter/vsitem', { keyword:this.keyword,'page' : this.currentPage1 , 'page_size' : 20 }, (res) => {
+            console.log(res);
+            this.modelList = res.data.items;
+            this.adicsCount = parseInt(res.data.meta.totalCount);
+            this.pageSize = parseInt(res.data.meta.perPage);
+          })
+        })
+      },
+      showEdit(row){
+        this.$refs.edit.setData(row)
+      },
+      handleCurrentChange(val) {       //当前页变化的时候
+        this.currentPage1 = val
+        this.getData()
+      },
+		}
+	}
+</script>
+<style>
+
+</style>

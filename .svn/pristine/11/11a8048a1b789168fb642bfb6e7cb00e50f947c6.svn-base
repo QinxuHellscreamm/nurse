@@ -1,0 +1,83 @@
+<template>
+    <div style='margin: 0 20px'>
+      <div class='out-top'>
+        <el-date-picker v-model="date" type="date" placeholder="选择日期" value-format="yyyy-MM-dd" format="yyyy-MM-dd"></el-date-picker>
+        <el-button class='serch' @click='getData'>搜索</el-button>
+        <el-button class='batch' @click='componentShow'>批量增减</el-button>
+        <!--<el-button class='batch'>自动取消设置</el-button>-->
+      </div>
+      <div class='out-main'>
+        <el-table :data='datas'>
+          <el-table-column  :prop='item.prop' :label="item.label" v-for='(item,index) of tables' :key=index></el-table-column>
+        </el-table>
+      </div>
+      <batchDialog ref='dialog'></batchDialog>
+    </div>
+</template>
+
+<script>
+  import batchDialog from './dialog'
+    export default {
+        name: "batchBedSetUp",
+
+        data(){
+          return{
+            date : '',
+            datas : [],
+            tables : [
+              { prop : 'BED_NUMBER' , label : '床号'},
+              { prop : 'NAME' , label : '姓名'},
+              { prop : 'SEX' , label : '性别'},
+              { prop : 'AGE' , label : '年龄'},
+              { prop : 'WARD_NAME' , label : '病区'},
+              { prop : 'DEPARTMENT' , label : '科室'},
+              { prop : 'PRIMARY_DOCTOR' , label : '主治医生'},
+              { prop : 'START_AT' , label : '设置责任床时间'},
+              { prop : 'END_AT' , label : '取消责任床时间'}
+            ]
+          }
+        },
+
+        components:{ batchDialog },
+
+        created(){
+          this.$nextTick(()=>{
+            this.getData()
+          })
+        },
+
+        methods:{
+          componentShow(){
+            this.$refs.dialog.getPatient()
+          },
+          getData(){
+              //如果为空 不能传null
+              if (!this.date)
+              {
+                  this.date = '';
+              }
+            this.getSer('datacenter/primarynurse',{'search-date' : this.date},res => {
+              this.datas = res.data
+            })
+          }
+        },
+
+
+    }
+</script>
+
+<style scoped lang='stylus'>
+  .serch
+    color #fff
+    background-color #00B3DC
+    padding 12px 33px
+    margin-left 15px
+  .batch
+    background-color #DDEFF9
+    color #00B3DC
+    border none
+  .el-table
+    height 100%
+  .out-main
+    height calc(100% - 120px)
+</style>

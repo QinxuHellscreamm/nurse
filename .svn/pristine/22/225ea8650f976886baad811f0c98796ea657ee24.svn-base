@@ -1,0 +1,115 @@
+<template>
+
+ <div style='display: inline-block;'>
+   <el-select  v-model="name" :popper-append-to-body="false">
+     <el-option :value="name" @click.native="changesecret">修改密码</el-option>
+     <el-option :value="name" @click.native="loginout">退出账号</el-option>
+   </el-select>
+   <el-dialog :visible.sync="popshow" title='修改密码' append-to-body width='372px' class='custom'>
+      <div class='item'><label>原密码</label><el-input type="password" v-model='oldPassword'></el-input></div>
+      <div class='item'><label>新密码</label><el-input type="password" v-model='newPassword'></el-input></div>
+      <div class='item'><label>确认密码</label><el-input type="password" v-model='okPassword'></el-input></div>
+     <div slot="footer">
+       <el-button @click="savepwd" type='primary'>确 定</el-button>
+     </div>
+   </el-dialog>
+
+ </div>
+
+
+</template>
+
+<script>
+    export default {
+
+      name: "user",
+
+      props:['name'],
+
+      data(){
+        return{
+          popshow : false,
+          oldPassword : '',
+          newPassword : '',
+          okPassword : ''
+        }
+      },
+
+      methods:{
+        loginout(){
+          this.getSer("datacenter/site/logout",{},res => {
+            if(res.status == "201"){
+              this.$store.state.userinfo = null
+              sessionStorage.routes = ''
+              window.location.reload()
+            }
+          })
+        },
+        changesecret(){
+          this.popshow = true
+        },
+        savepwd(){
+            if (!this.oldPassword)
+            {
+                this.$message({message : '旧密码不能为空', type : 'warning'})
+                return false
+            }
+            if (!this.newPassword)
+            {
+                this.$message({message : '新密码不能为空', type : 'warning'})
+                return false
+            }
+            if (!this.okPassword)
+            {
+                this.$message({message : '确认密码不能为空', type : 'warning'})
+                return false
+            }
+            if (this.okPassword != this.newPassword)
+            {
+              this.$message({message : '两次密码输入不一致', type : 'warning'})
+              return false
+            }
+            this.post('datacenter/nadmin/changepwd', {OLDPASSWORD:this.oldPassword,NEWPASSWORD:this.newPassword,ID:decodeURIComponent(this.getCookieVal("admin_id"))}, res => {
+              this.$message({message : res.data.message, duration : 1000, type : 'success'})
+                this.popshow = false
+            })
+        }
+      }
+    }
+</script>
+
+<style scoped lang='stylus'>
+  .el-select >>> .el-input__inner
+    width 130px
+    height 32px
+    background #00B3DC
+    border none
+    border-radius 4px
+    color #FFFFFF
+    text-align center
+  .el-select >>> .el-icon-arrow-up:before
+    color #FFFFFF
+  .custom
+    &>>>.el-dialog__body
+      padding 10px 20px
+    .item
+      display flex
+      margin-top 20px
+      label
+        width 5em
+        display inline-block
+        line-height 32px
+        text-align right
+      .el-input
+        flex 1
+        margin-left 20px
+        height 32px
+        margin-right 30px
+        &>>>.el-input__inner
+          line-height 32px
+          height 32px
+          background-color #F9F9FB
+    .el-button--primary
+      padding 8px 32px
+      margin-top 5px
+</style>

@@ -1,0 +1,59 @@
+<template>
+    <div>
+     <ul class="vitalist">
+       <router-link v-for="(item,index) of vitalList" :key="item" tag='li' :to="{path:'/managePlatform/'+page+'/'+tempss[index]}">{{item}}</router-link>
+       <router-link v-for="(item,index) of dynamicName" :key="item" tag='li' :to="{path:'/managePlatform/'+page+'/'+dynamic[index]}">
+         {{item}}<i class="el-icon-circle-close"  @click='toggle(index)'></i>
+       </router-link>
+     </ul>
+     <router-view class="vitalist-content"></router-view>
+    </div>
+</template>
+<script>
+    export default{
+      props:["vitalList","tempss",'page','dynamic','dynamicName'],
+      data(){
+        return {
+          id:''
+        }
+      },
+      methods:{
+        toggle(){
+          this.$parent.toggle()
+        }
+      }
+    }
+</script>
+<style scoped lang="stylus">
+  .vitalist
+    display flex
+    height 40px
+    line-height 40px
+    margin-top 24px
+    li
+      margin-left 10px;
+      padding 0 12px
+      background #DDEFF9
+      border-radius 5px 5px 0 0
+      cursor pointer
+      position relative
+      &.router-link-active
+        background #fff
+      i
+        position absolute
+        font-size 12px
+        top 6px
+        right 6px
+
+  .vitalist-content
+    width 100%
+    min-height 700px
+    padding 10px 20px
+    background #FFFFFF
+    box-shadow 0 0 10px 0 rgba(0,0,0,0.04)
+    border-radius 4px
+    -webkit-box-sizing border-box
+    -moz-box-sizing border-box
+    box-sizing border-box
+
+</style>

@@ -1,0 +1,106 @@
+<template>
+  <el-dialog width="556px" title="添加护理记录" :visible.sync="innerVisible" append-to-body>
+    护理措施
+    <div class='advice'>
+      <el-checkbox-group v-model="checkList" style='height: auto;overflow:hidden;'>
+        <el-checkbox :label="item.content" v-for='item of Measures' :key='item.id'>{{item.content}}</el-checkbox>
+      </el-checkbox-group>
+    </div>
+
+    <div slot="footer" class="dialog-footer">
+      <el-button @click="postMeasures" type='primary'>确定</el-button>
+      <el-button @click="innerVisible = false" type='primary'>关闭</el-button>
+    </div>
+  </el-dialog>
+</template>
+
+<script>
+  import { _debounce,_YMDhms } from "@/global"
+  export default {
+    name: "signBuildRecord",
+
+    props:['INPATIENT_NUMBER','id','re_code'],
+
+    data(){
+      return{
+        innerVisible :false,
+        num:'',
+        checkList:[],
+        Measures:[],
+        form_id:'',
+        vs_item_code:'',
+        option:[],
+        content:''
+      }
+    },
+
+    methods:{
+      postMeasures:_debounce(function () {
+        let obj = {}
+        obj.vs_item_code = this.vs_item_code
+        obj.content = this.content
+        obj.option = this.option
+        obj.score = 0
+        let obj2={}
+        obj2.vs_item_code = 'T12100'
+        obj2.content = this.checkList.toString()
+        obj2.option = this.option
+        obj2.score = 0
+        let answers = JSON.stringify([obj,obj2])
+        this.post('datacenter/questionnaire',{ from : 1, re_code : this.re_code, form_id : this.form_id , inpatient_number : this.INPATIENT_NUMBER ? this.INPATIENT_NUMBER : this.num , time : _YMDhms() , answers },res=>{
+          console.log(res)
+          if(res.status<400){
+            this.$message({ type: 'success', message : '添加护理记录成功'})
+          }
+          this.innerVisible = false
+        })
+      }),
+      getData(data,num){
+        this.num = num
+        this.getSer('datacenter/twtemplate/issign',{ tid :this.id, code:data.VS_CODE ,val : data.VS_VALUE , num : num ? num : this.INPATIENT_NUMBER },res=>{
+          console.log(res);
+          if(res.data.items.result.length > 0){
+            this.form_id = res.data.items.form_id
+            this.Measures = res.data.items.result
+            this.checkList = []
+            this.innerVisible = true
+            this.content = data.VS_VALUE
+            this.vs_item_code = data.VS_CODE
+          }
+        })
+      }
+    }
+  }
+</script>
+
+<style scoped lang='stylus'>
+  .advice
+    width: 95%
+    padding 10px 10px
+    border 1px solid #ddd
+    border-radius 5px
+    margin-top 20px
+    min-height 0
+    .el-checkbox
+      display block
+      padding: 0 20px;
+      background: #F9F9FB;
+      line-height: 44px;
+      color: #2B3A50;
+      border: 5px solid #fff;
+      -webkit-box-sizing: border-box;
+      box-sizing: border-box;
+      position relative
+      &>>>.el-checkbox__input
+        position absolute
+        top 15px
+      &>>>.el-checkbox__label
+        padding-left 22px
+        overflow-wrap break-word
+        word-break normal
+    .el-checkbox+.el-checkbox
+      margin-left 0
+
+  /*width: 83px; ;*/
+</style>
+

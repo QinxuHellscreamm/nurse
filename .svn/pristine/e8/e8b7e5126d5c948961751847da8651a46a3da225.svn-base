@@ -1,0 +1,106 @@
+<template>
+    <div class='main-page'>
+      <div class="out-top"></div>
+        <ul class="vitalist">
+          <li :class='{"current":currentIndex == 0}' @click='currentIndex=0'>体征项</li>
+          <li v-for='(item,index) of LIST' v-if='index > 0' :class='{"current":currentIndex == index}' @click='currentIndex = index'>{{item.TITLE}}</li>
+          <li :class='{"current":currentIndex == 100}' @click='currentIndex =100'>自定义</li>
+        </ul>
+        <!--<el-tabs v-model='activeName'>-->
+          <!--<el-tab-pane :label="LIST[0].TITLE" v-if='LIST[0]' key='admin' name='index'>-->
+          <div class='out-main'>
+            <ul>
+              <li v-if='currentIndex == 0'><temperature :tpl='LIST[0].ID' v-if='LIST[0]'></temperature></li>
+              <li v-if="currentIndex == index && currentIndex > 0" v-for='(item,index) of LIST'><other-sign-item :tpl='LIST[index].ID' :TITLE='{"TITLE":LIST[index].TITLE}' :signList='signList' :key='index'></other-sign-item></li>
+              <li v-if="currentIndex == 100"><custom-sign-item :signList='signList'></custom-sign-item></li>
+            </ul>
+          </div>
+
+          <!--</el-tab-pane>-->
+          <!--<el-tab-pane :label="item.TITLE" v-for='(item,index) of LIST' v-if='index > 0' :key='index' :name='"index"+index'>-->
+
+          <!--</el-tab-pane>-->
+          <!--<el-tab-pane label="自定义" v-if='LIST[0]' name='index100'>-->
+
+          <!--</el-tab-pane>-->
+        <!--</el-tabs>-->
+    </div>
+</template>
+
+<script>
+  import temperature from './signItem/temperature' //体温
+  import otherSignItem from './otherSignItem/otherSignItem' //体温
+  import customSignItem from './customSignItem/customSignItem' //自定义
+    export default {
+
+        name: "batchEntryOfSigns",
+
+        components : { temperature , customSignItem , otherSignItem },
+
+        data(){
+          return{
+            LIST : [],
+            signList:[],
+            currentIndex : 0,
+            // activeName: 'index'
+          }
+        },
+
+        methods : {
+          getTabData(){
+            this.LIST = []
+            this.getSer('datacenter/vs-nurse-template', { status:'ALL', page : 1 ,'per-page':100 } , res =>{
+              console.log(res)
+              this.LIST = res.data.items
+            })
+          },
+        },
+
+        mounted(){
+          this.$nextTick(()=>{
+            this.getSer('datacenter/vs',{ page : 1 , page_size : 1000 ,isparent : 1},res=>{
+              console.log(res)
+              let arr = []
+              res.data.items.forEach(item=>{
+                 if(item.TIMES_SLICE_LOCK == 2){
+                    arr.push(item)
+                 }else{
+
+                 }
+              })
+              this.signList = arr
+            })
+            this.getTabData()
+          })
+        }
+    }
+</script>
+
+<style scoped lang='stylus'>
+  .main-page
+    margin 0 20px
+    .vitalist
+      overflow hidden
+      li
+        background-color #DDEFF9
+        line-height 40px
+        padding 0 42px
+        margin-left 10px
+        font-size 16px
+        border-radius 4px 4px 0 0
+        float left
+        cursor pointer
+      &>>>.current
+        background-color #FFFFFF
+        color #666
+      /*&>>>.el-tabs__active-bar*/
+        /*display none*/
+      /*&>>>.el-tabs__nav-wrap:after*/
+        /*display none*/
+      /*&>>>.el-tabs__header*/
+        /*margin 0*/
+      /*&>>>.el-tabs__content*/
+        /*background-color #FFFFFF*/
+        /*min-height 660px*/
+        /*border-radius 4px 4px 0 0*/
+</style>

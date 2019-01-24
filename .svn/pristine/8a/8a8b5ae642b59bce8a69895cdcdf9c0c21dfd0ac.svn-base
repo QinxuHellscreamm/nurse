@@ -1,0 +1,143 @@
+<template>
+  <div>
+    <div class="out-top">
+      <span>时间</span>
+      <el-date-picker
+        v-model="start_end_time"
+        type="datetimerange"
+        value-format='yyyy-MM-dd	HH:mm'
+        format="yyyy-MM-dd	HH:mm"
+        range-separator="至"
+        start-placeholder="开始日期"
+        end-placeholder="结束日期">
+      </el-date-picker>
+      <span>事件类型</span>
+      <el-select v-model="event_type_id"  placeholder="事件类型" >
+        <el-option
+          v-for="item in patient_typelist"
+          :key="item.value"
+          :label="item.label"
+          :value="item.value">
+        </el-option>
+      </el-select>
+      <span>上报人</span>
+      <el-input v-model="nurse_name" placeholder="请输入内容"></el-input>
+      <el-button type='primary' @click="pageAjax()">搜索</el-button>
+    </div>
+
+    <div class="out-main">
+      <el-table :data="eventList" style="width: 100%">
+        <el-table-column prop="ID" label="事件编号" min-width="100"></el-table-column>
+        <el-table-column prop="EVENT_TYPE_NAME" label="事件类型" min-width="100"></el-table-column>
+        <el-table-column prop="EVENT_GRADE_NAME" label="事件等级" min-width="100"></el-table-column>
+        <el-table-column prop="EVENT_WARD_NAME" label="护理部门" min-width="100"></el-table-column>
+        <el-table-column prop="REPORT_NAME" label="上报人" min-width="100"></el-table-column>
+        <el-table-column prop="CREATE_AT_SHOW" label="上报时间" min-width="150"></el-table-column>
+        <el-table-column prop="EVENT_STATUS_DESC" label="状态" min-width="100"></el-table-column>
+        <el-table-column  label="操作" width="100" v-if="role_rank == 2">
+          <template slot-scope="{row}" >
+            <el-button v-if="(row.EVENT_STATUS == 1 && row.IS_DRAFT == 1) || (row.EVENT_STATUS == 0 && row.IS_DRAFT == 0)"  type="text" size="small" @click='showSub(row.ID,row.REPORT_NAME)'>护士长审核</el-button>
+            <el-button  type="text" size="small" @click='showDetail(row.ID,row.REPORT_NAME)'>查看</el-button>
+          </template>
+        </el-table-column>
+        <el-table-column  label="操作" width="100" v-if="role_rank == 3">
+          <template slot-scope="{row}">
+            <el-button v-if="(row.EVENT_STATUS == 2 && row.IS_DRAFT == 1) || (row.EVENT_STATUS == 1 && row.IS_DRAFT == 0)"  type="text" size="small" @click='showSub(row.ID,row.REPORT_NAME)'>护理部审核</el-button>
+            <el-button  type="text" size="small" @click='showDetail(row.ID,row.REPORT_NAME)'>查看</el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+      <div class="block" style="margin:20px 0;">
+        <el-pagination
+          background
+          @current-change="handleCurrentChange"
+          :current-page="currentPage1"
+          :page-size="20"
+          layout="total, prev, pager, next, jumper"
+          :total="adicsCount">
+        </el-pagination>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+  export default {
+
+    data(){
+      return {
+        start_end_time: "",
+        nurse_name : "",
+        eventList:[],
+        currentPage1 : 1,
+        adicsCount : 0,
+        event_type_id:'',
+        patient_typelist:[],
+        role_rank:'',
+      }
+    },
+
+    methods:{
+      getType(){
+        this.getSer("datacenter/infaustevent/inserttypelist" ,{}, (res) => {
+          this.patient_typelist = res.data;
+          this.patient_typelist.unshift({value: "0", label: "全部"})
+            console.log('this.patient_typelist',this.patient_typelist)
+        })
+      },
+      pageAjax(){
+        this.role_rank = decodeURIComponent(this.getCookieVal("role_rank"))
+        this.getSer("datacenter/infaustevent" , {
+          start_time: (this.start_end_time ? this.start_end_time[0] : '') ,
+          end_time: (this.start_end_time ? this.start_end_time[1] : '') ,
+          event_type_id : this.event_type_id,
+          nurse_name : this.nurse_name,
+          page: this.currentPage1,
+          page_size: this.pageSize,
+        },res=>{
+          console.log("不良列表",res)
+        if(res.status <= 400){
+          this.eventList = res.data.items;
+          this.adicsCount = parseInt(res.data.meta.totalCount);
+        }
+      })
+      },
+      handleCurrentChange(val) {       //当前页变化的时候
+        this.currentPage1 = val
+        this.pageAjax();
+      },
+      showSub(id,name) {
+        console.log("rowrow",name,id)
+        this.$parent.$parent.addDynamic(id,name)
+      },
+      showDetail(id,name) {
+        console.log("showDetail",name,id)
+        this.$parent.$parent.addDynamicShow(id,name)
+      },
+    },
+    mounted() {
+
+      this.$nextTick(() => {
+        this.pageAjax()
+        this.getType()
+    })
+    },
+  }
+</script>
+
+<style scoped lang="stylus">
+  .out-top >>> .el-input__inner
+    background #fff
+  .out-top
+    .el-input
+      width 150px
+      margin-right 10px
+      &>>>.el-input__inner
+        width 150px
+    .el-select
+      margin-right 10px
+      width 150px
+  .el-button
+    padding 12px 32px
+
+</style>

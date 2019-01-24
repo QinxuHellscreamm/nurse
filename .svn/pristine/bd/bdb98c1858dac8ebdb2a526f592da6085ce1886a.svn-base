@@ -1,0 +1,254 @@
+<template>
+  <div class="bloodSugar">
+    <div class='list'>
+      <div class='top-menu'>
+        <el-button class="trend">趋势图</el-button>
+        <div class='right-button'>
+          <el-button class="trend">预览</el-button>
+          <div class='printing'></div>
+        </div>
+      </div>
+      <div class='out-main'>
+        <el-table :data="tableData" style="width: 100%" @row-click="editSheet">
+          <el-table-column  prop="NURSING_AT" label="日期"></el-table-column>
+          <el-table-column label="医院监测点">
+            <template slot-scope="{row}"><div>{{row.MONITORING_POINT | noticingPointName}}</div></template>
+          </el-table-column>
+          <el-table-column  prop="BLOOD_GLUCOSE_RECORD" label="血糖值（mmol/L）"></el-table-column>
+          <el-table-column  prop="ADMIN_NAME" label="签名"></el-table-column>
+          <el-table-column  prop="REMARK" label="备注"></el-table-column>
+        </el-table>
+      </div>
+    </div>
+    <div class='add'>
+   <!--   <div class="title" v-if="showDeleteBtn">编辑</div>-->
+   <!--   <div class="title" v-else="showDeleteBtn">新增</div>-->
+      <div class='time'>
+        <span>护理时间</span>
+        <el-date-picker v-model="NURSING_AT"  disabled="true" type="datetime" value-format='yyyy-MM-dd HH:mm:ss' placeholder="选择日期时间"></el-date-picker>
+      </div>
+      <div class="testing">
+        <div style='line-height: 40px'>检测点</div>
+        <div>
+          <el-radio v-model="MONITORING_POINT" label="1" disabled="true">0:00</el-radio>
+          <el-radio v-model="MONITORING_POINT" label="2" disabled="true">3:00</el-radio>
+          <el-radio v-model="MONITORING_POINT" label="3" disabled="true">早餐前</el-radio>
+          <el-radio v-model="MONITORING_POINT" label="4" disabled="true">早餐后</el-radio>
+          <el-radio v-model="MONITORING_POINT" label="5" disabled="true">午餐前</el-radio>
+          <el-radio v-model="MONITORING_POINT" label="6" disabled="true">午餐后</el-radio>
+          <el-radio v-model="MONITORING_POINT" label="7" disabled="true">晚餐前</el-radio>
+          <el-radio v-model="MONITORING_POINT" label="8" disabled="true">晚餐后</el-radio>
+          <el-radio v-model="MONITORING_POINT" label="8" disabled="true">22:00</el-radio>
+          <el-radio v-model="MONITORING_POINT" label="9" disabled="true">随机血糖</el-radio>
+        </div>
+      </div>
+      <div class="blood">
+        <div>血糖值（mmol/L）</div>
+        <el-input v-model="BLOOD_GLUCOSE_RECORD" disabled="true"></el-input>
+      </div>
+      <div class="remarks">
+        <div>备注</div>
+        <el-input v-model="REMARK" type='textarea' disabled="true"></el-input>
+      </div>
+      <div class='btn-menu' >
+       <!-- <el-button class='save' @click="saveSheet()">保存</el-button>-->
+        <!--<el-button class='empty'  @click="clearSheet()">清空</el-button>-->
+    <!--    <el-button class='empty' v-if="showDeleteBtn" @click="delSheetSubmit()">删除</el-button>-->
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+  import {_debounce} from '@/global'
+  export default {
+    name: "bloodSugar",
+
+    props: ['id','INPATIENT_NUMBER'],
+
+    data() {
+      return {
+        tableData : [],
+        ID: '',
+        NURSING_AT: '',
+        MONITORING_POINT: '',
+        BLOOD_GLUCOSE_RECORD: '',
+        REMARK: '',
+        showDeleteBtn : false, //是否为编辑状态 如果是编辑状态  则显示删除按钮 并且修改提交方法为编辑
+      }
+    },
+
+    created() {
+      this.$nextTick(() => {
+        this.getSer('datacenter/bloodglucoseresh', { INPATIENT_NUMBER : this.INPATIENT_NUMBER }, res => {
+          console.log(res)
+          this.tableData = res.data.items
+        })
+      })
+    },
+
+    methods: {
+      saveSheet:_debounce(function () {
+          //为true  为编辑
+          if (this.showDeleteBtn) {
+              var obj = {
+                  id: this.ID,
+                  INPATIENT_NUMBER: this.INPATIENT_NUMBER,
+                  NURSING_AT: this.NURSING_AT,
+                  MONITORING_POINT: this.MONITORING_POINT,
+                  BLOOD_GLUCOSE_RECORD: this.BLOOD_GLUCOSE_RECORD,
+                  REMARK: this.REMARK
+              }
+              this._put('datacenter/bloodglucoseresh/'+ this.ID, obj, res => {
+                  if (res.status < 400) {
+                      this.$message({ type: 'success', message: '编辑成功!' })
+                      this.clearSheet()
+                      this.getSer('datacenter/bloodglucoseresh', { INPATIENT_NUMBER: this.INPATIENT_NUMBER }, res => {
+                          this.tableData = res.data.items
+                      })
+                  }
+              })
+          }else {
+              var obj = {
+                  INPATIENT_NUMBER: this.INPATIENT_NUMBER,
+                  NURSING_AT: this.NURSING_AT,
+                  MONITORING_POINT: this.MONITORING_POINT,
+                  BLOOD_GLUCOSE_RECORD: this.BLOOD_GLUCOSE_RECORD,
+                  REMARK: this.REMARK
+              }
+
+              this.post('datacenter/bloodglucoseresh', obj, res => {
+                  if (res.status < 400) {
+                      this.$message({type: 'success', message: '新增成功!'})
+                      this.clearSheet()
+                      this.getSer('datacenter/bloodglucoseresh', { INPATIENT_NUMBER : this.INPATIENT_NUMBER }, res => {
+                          this.tableData = res.data.items
+                      })
+                  }
+              })
+          }
+      }) ,
+      //清空按钮
+      clearSheet(){
+        this.NURSING_AT = ''
+        this.MONITORING_POINT = ''
+        this.BLOOD_GLUCOSE_RECORD = ''
+        this.REMARK = ''
+        this.showDeleteBtn = false
+      },
+      //表格数据 点击效果
+      editSheet(vals){
+        this.showDeleteBtn = true
+        this.ID = vals.ID
+        this.NURSING_AT = vals.NURSING_AT
+        this.MONITORING_POINT = vals.MONITORING_POINT + ''
+        this.BLOOD_GLUCOSE_RECORD = vals.BLOOD_GLUCOSE_RECORD
+        this.REMARK = vals.REMARK
+      },
+      //删除记录
+      delSheetSubmit(){
+        this._delete('datacenter/bloodglucoseresh/'+this.ID, { id : this.ID }, res => {
+          if (res.status == 204)
+          {
+              this.$message({type: 'success', message: '删除成功!'})
+              this.clearSheet()
+              this.getSer('datacenter/bloodglucoseresh', { INPATIENT_NUMBER : this.INPATIENT_NUMBER }, res => {
+                  this.tableData = res.data.items
+              })
+          }
+        })
+      },
+    }
+  }
+</script>
+
+<style scoped lang='stylus'>
+  .bloodSugar
+    display flex
+    height 100%
+    flex 1
+    .list
+      flex 1
+      .out-main
+        box-shadow 0 0 0 0 #FFFFFF
+      .top-menu
+        overflow hidden
+        margin 12px 20px
+        .trend
+          padding 13px 20px!important
+          border none
+          background-color #DDEFF9
+          color #00B3DC
+          float left
+        .right-button
+          float right
+          .printing
+            width 40px
+            height 40px
+            float right
+            background-image url("../../../../assets/images/print.png")
+            margin-left 10px
+      .el-table::before
+        height 0
+    .add
+      width 300px
+      border 1px solid #D8E3E7
+      height 100%
+      box-sizing border-box
+      padding 0 18px
+      overflow auto
+      &::-webkit-scrollbar
+        width 7px
+        height 1px
+      &::-webkit-scrollbar-thumb
+        border-radius 7px
+        -webkit-box-shadow inset 0 0 5px rgba(0,0,0,0.2)
+        background #00B3DC
+      &::-webkit-scrollbar-track
+        -webkit-box-shadow inset 0 0 5px rgba(0,0,0,0.2)
+        background-color #d8ebf4
+      .title
+        font-size 18px
+        line-height 64px
+      .time
+        .el-input
+          width 190px
+          margin-left 5px
+        .el-input >>>.el-input__inner
+          background-color #F9F9FB
+      .testing
+        .el-radio
+          line-height 40px
+          width 48%
+        .el-radio+.el-radio
+          margin-left 0
+      .blood
+        margin-top 20px
+        .el-input
+          width 260px
+          margin-top 10px
+        .el-input >>>.el-input__inner
+          background-color #F9F9FB
+      .remarks
+        margin-top 20px
+        .el-textarea
+          margin-top 10px
+        .el-textarea >>>.el-textarea__inner
+          resize none
+          background-color #F9F9FB
+          height 110px
+      .btn-menu
+        .el-button
+          border none
+          color #fff
+          float right
+          margin-top 30px
+        .empty
+          background-color #E63922
+          padding 13px 16px!important
+        .save
+          background-color #00B3DC
+          padding 13px 34px!important
+          margin-left 10px
+
+</style>

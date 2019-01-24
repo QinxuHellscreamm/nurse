@@ -1,0 +1,109 @@
+<template>
+  <div ref="print">
+    <el-table style="width: 100%" :data='list'>
+      <el-table-column  label="护士" >
+        <template slot-scope="scope">
+          <div>
+            {{ scope.row.NURSE_NAME }}
+          </div>
+        </template>
+      </el-table-column>
+      <el-table-column  :label="item.strth" v-for='(item,index) of weekDays' :key='index' >
+        <template slot-scope="scope">
+          <div :style="{background:scope.row.items[index].FLAG_COLOR}" @click='cellClick(scope.row.items[index] , scope.row.NURSE_NAME , scope.row.JOB_NUMBER)'>
+            {{ scope.row.items[index].NAME }}
+          </div>
+        </template>
+      </el-table-column>
+      <el-table-column prop="week_work_hours" label="本周工作时间" ></el-table-column>
+      <el-table-column prop="week_owe_time" label="本周欠时" ></el-table-column>
+      <el-table-column prop="total_owe_time" label="累计欠时" ></el-table-column>
+    </el-table>
+    <editColumn ref='child' :classList='classList'></editColumn>
+  </div>
+</template>
+
+<script>
+  import editColumn from './editColumn'
+    export default {
+        name: "nurseView",
+
+        props : ['weekDays','start','end'],
+
+        data(){
+          return{
+            war_id : "",
+            list : [],
+            classList : []
+          }
+        },
+
+        components : { editColumn },
+
+        methods : {
+          getData(){
+            this.war_id = this.$store.state.userinfo.ward_id
+            this.getSer('datacenter/shift',{ war_id :  this.war_id } , res => {
+              console.log(res)
+              this.classList = res.data.items
+              this.classList.push({ NAME : '休息' , ID : 86 , SORT : 999 })
+            })
+            this.getSer('datacenter/nursemanage',{ start : this.start , end : this.end , war_id :  this.war_id  } , res => {
+              this.list = res.data.items
+              console.log("res",res)
+            })
+          },
+          print(){
+            //排班打印
+            var LODOP = this.$getLodop()
+            var strBodyStyle="<style> td{text-align: center; font-size:12px;min-width:9px;min-height: 15px;border-left 5px solid #fff;border-bottom: 5px solid #fff;background-color:#fff;}</style>";
+            var strBodyHtml = strBodyStyle+"<body>"+this.$refs.print.innerHTML+"</body>";
+            console.log(strBodyHtml);
+            LODOP.PRINT_INIT("打印控件功能演示_Lodop功能_表单一");
+            LODOP.SET_PRINT_PAGESIZE(2,"","","a4");
+            LODOP.SET_PRINT_MODE("PRINT_PAGE_PERCENT","Auto-Width");
+            LODOP.ADD_PRINT_HTML(20,20,'100%','100%',strBodyHtml);//xx ←边距 xx height
+            LODOP.SET_SHOW_MODE("LANDSCAPE_DEFROTATED",1)
+            LODOP.PREVIEW();
+          },
+          cellClick(column,NURSE_NAME,jobNumber){
+            console.log(column,NURSE_NAME,jobNumber)
+            if(new Date(this.$store.getters.getToday).getTime() > new Date(column.DATE).getTime()){
+              return
+            }
+            let flag = true
+            this.classList.forEach(item=>{
+              item.ID == column.SHEET_ID || column.SHEET_ID == '' ? flag = false : null
+            })
+            if(flag){
+              return
+            }
+            this.$refs.child.getData(column,NURSE_NAME,jobNumber)
+          }
+
+        },
+
+        mounted(){
+          this.$nextTick(()=>{
+            setTimeout(()=>{
+              this.getData()
+            })
+          })
+        }
+    }
+</script>
+
+<style scoped lang='stylus'>
+  .el-table >>> td
+    border-left 4px solid #FFFFFF
+    .cell
+      padding 0
+      cursor pointer
+      div
+        padding 8px 15px
+  .el-table
+    &>>>.el-table__body .current-row > td
+      background-color #F9F9FB
+    &>>>.el-table__body .hover-row > td
+      background-color #F9F9FB
+</style>

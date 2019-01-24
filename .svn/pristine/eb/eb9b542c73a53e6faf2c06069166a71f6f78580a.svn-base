@@ -1,0 +1,158 @@
+<template>
+  <div class='edit_table'>
+    <div class='top-menu'>
+      <div style='display: flex'>
+        <div style='width: 6em;line-height: 40px;'>表单名称</div>
+        <el-input v-model='tit' class='tit'></el-input>
+      </div>
+      <div class='btn-menu'>
+        <el-button type='primary' @click='save'>确定</el-button>
+        <el-button type='danger' @click='deleteTemplate'>删除</el-button>
+      </div>
+    </div>
+    <div class='out-main'>
+      <el-table :data='editData'>
+        <el-table-column label="序号" prop="ID" width='80'>
+          <template slot-scope="scope">
+            <span>{{ scope.$index + 1 }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="项目名称" prop="ID" width='150'>
+          <template slot-scope="scope">
+            <el-select filterable v-model='scope.row.CODE' @change='selected' @focus='focu(scope.$index)'>
+              <el-option v-for="item in signList" :key="item.ID" :label="item.NAME" :value="item.CODE"></el-option>
+            </el-select>
+          </template>
+        </el-table-column>
+        <el-table-column label="一天几次" prop="ID" width='120'>
+          <template slot-scope="scope">
+            <el-input v-model='scope.row.NUMBER_OF_TIMES' maxlength='1' :readonly='scope.row.NUMBER_OF_TIMES_REVISABILITY == 1'></el-input>
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" prop="ID" width='80'>
+          <template slot-scope="scope">
+            <el-button type='text' @click='deleteRow(scope.$index)'>删除</el-button>
+          </template>
+        </el-table-column>
+        <el-table-column></el-table-column>
+      </el-table>
+    </div>
+    <el-dialog :visible.sync="popshow" title='选择体征项' width='454px'>
+      <div class='advice'>
+        <el-checkbox-group v-model="editData[thisRow].SUB_CODE_LIST" v-if='thisRow !== "" && editData[thisRow] && editData[thisRow].SUB_CODE'>
+          <el-checkbox :label="item.CODE" v-for='item of editData[thisRow].SUB_CODE' :key='item.CODE'>{{item.NAME}}</el-checkbox>
+        </el-checkbox-group>
+      </div>
+      <div slot="footer" class="dialog-footer">
+        <el-button type="primary" @click="popshow = false" style='padding:12px 32px!important;'>确 定</el-button>
+      </div>
+    </el-dialog>
+  </div>
+</template>
+
+<script>
+  import { _debounce } from "@/global"
+    export default {
+        name: "settingSign",
+
+        props:['editData','tpl','signList','tit'],
+
+        data(){
+          return{
+            thisRow:'',
+            popshow:false
+          }
+        },
+
+        methods:{
+          deleteRow(index){
+            this.editData.splice(index,1)
+          },
+          deleteTemplate(){
+            this._delete('datacenter/vs-nurse-template/'+this.tpl,{id:this.tpl},res=>{
+              if(res.status == 204){
+                this.$message({type: 'success', message: '删除成功!'});
+                this.$parent.$parent.$parent.$parent.getTabData()
+                this.$parent.getData()
+              }
+            })
+          },
+          selected(code){
+            console.log(code);
+            this.signList.forEach(item=>{
+              //console.log(item);
+              if(code == item.CODE){
+                console.log(item)
+                this.editData[this.thisRow].NUMBER_OF_TIMES = item.NUMBER_OF_TIMES
+                this.editData[this.thisRow].NUMBER_OF_TIMES_REVISABILITY = item.NUMBER_OF_TIMES_REVISABILITY
+                this.editData[this.thisRow].SUB_CODE_LIST = []
+                if(item.SUB.length > 0){
+                  console.log(1);
+                  this.editData[this.thisRow].SUB_CODE = item.SUB
+                  this.popshow = true
+                }
+              }
+            })
+          },
+          focu(index){
+            this.thisRow = index
+          },
+          save : _debounce(function () {
+            let datas = []
+            this.editData.forEach(item=>{
+              datas.push({ code:item.CODE , num : item.NUMBER_OF_TIMES , sub : item.SUB_CODE_LIST })
+            })
+            let data = JSON.stringify(datas)
+            this._put('datacenter/vs-nurse-template/'+this.tpl, { id:this.tpl,title : this.tit , data } , res=>{
+              if(res.status < 400){
+                this.$message({ type: 'success', message: '编辑成功'})
+                console.log(this.$parent);
+                this.type = 'submit'
+                this.$parent.update()
+                this.$parent.getData()
+              }
+            })
+          }),
+        }
+    }
+</script>
+
+<style scoped lang='stylus'>
+  .top-menu
+    display flex
+    margin-bottom 10px
+    .btn-menu
+      flex 1
+      text-align left
+      margin-left 10px
+      >>>.el-button+.el-button
+        margin-left 5px
+      .tit
+        width 310px
+  .advice
+    width: 95%
+    padding 10px 10px
+    border 1px solid #ddd
+    border-radius 5px
+    margin-top 20px
+    min-height 0
+    .el-checkbox
+      display block
+      padding: 0 20px;
+      background: #F9F9FB;
+      line-height: 44px;
+      color: #2B3A50;
+      border: 5px solid #fff;
+      -webkit-box-sizing: border-box;
+      box-sizing: border-box;
+      position relative
+      &>>>.el-checkbox__input
+        position absolute
+        top 15px
+      &>>>.el-checkbox__label
+        padding-left 22px
+        overflow-wrap break-word
+        word-break normal
+    .el-checkbox+.el-checkbox
+      margin-left 0
+</style>

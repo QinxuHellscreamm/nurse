@@ -1,0 +1,71 @@
+<template>
+  <div>
+    <print style='float: right;margin: 10px 20px'>打印</print>
+    <div ref='content' class='content'>
+      <div class='head' style='padding:20px 0;'>
+        <h1 style='text-align :center;font-size :20px;line-height :40px'></h1>
+        <h1 style='text-align :center;font-size :20px;line-height :40px'>{{TITLE}}</h1>
+      </div>
+      <div v-html='content'></div>
+    </div>
+  </div>
+</template>
+
+<script>
+  import print from '@/components/print'
+    export default {
+        name: "notificationBook",
+
+        props:['INPATIENT_NUMBER','id','TITLE'],
+
+        components:{print},
+
+        data(){
+          return{
+            content:''
+          }
+        },
+
+        methods:{
+          getData(){
+            this.getSer('datacenter/tempstyle/'+this.id, {id:this.id , inpatient_number:this.INPATIENT_NUMBER,is_preview:1 },res=>{
+              console.log(res);
+              this.content = res.data.content
+            })
+          },
+          print_preview(){
+            console.log(this.$getLodop);
+
+            var LODOP = this.$getLodop()
+            LODOP.PRINT_INIT("打印控件功能演示_Lodop功能_表单一");
+            LODOP.SET_PREVIEW_WINDOW(2);
+            LODOP.SET_PRINT_PAGESIZE(1,"","","a4");
+            LODOP.SET_PRINT_STYLE("FontSize",18);
+            LODOP.SET_PRINT_STYLE("Bold",1);
+            LODOP.SET_PRINT_MODE("PRINT_PAGE_PERCENT","Auto-Width");
+            LODOP.ADD_PRINT_HTM(20,20,'100%','100%',this.$refs.content.innerHTML);//xx ←边距 xx height
+            LODOP.SET_SHOW_MODE("LANDSCAPE_DEFROTATED",1)
+            LODOP.PREVIEW();
+          },
+        },
+
+        mounted(){
+          this.$nextTick(()=>{
+            console.log(1);
+            this.getData    ()
+          })
+        },
+        watch:{
+          'id':function (id) {
+            this.getData()
+          },
+        }
+    }
+</script>
+
+<style scoped lang='stylus'>
+  .content
+    width 800px
+    margin  0 auto
+
+</style>

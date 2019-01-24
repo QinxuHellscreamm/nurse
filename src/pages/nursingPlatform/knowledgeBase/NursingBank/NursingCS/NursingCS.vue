@@ -1,0 +1,120 @@
+<template>
+	<div>
+    <div class="search-bar">
+      <input type="search" placeholder="搜索关键字" @change="getData(1)" @keyup.enter="getData(1)" class="out-input marr20" v-model="keyword"/>
+      <el-button  type='primary' @click="getData(1)">搜索</el-button>
+      <el-button  type="success" @click="add">新增</el-button>
+    </div>
+    <div class="out-main">
+      <el-table :data="modelList" style="width: 100%">
+        <el-table-column fixed label="ID" prop="ID" min-width="60"></el-table-column>
+        <el-table-column label="护理措施" min-width="200" prop="CONTENT"></el-table-column>
+        <el-table-column label="创建时间" min-width="100"><template slot-scope="{row}"><span>{{ row.CREATED_AT| stampTotime }}</span></template></el-table-column>
+        <el-table-column label="更新时间" min-width="100"><template slot-scope="{row}"><span>{{ row.UPDATED_AT| stampTotime }}</span></template></el-table-column>
+        <el-table-column label="操作人" min-width="100" prop="UPDATED_ADMIN_NAME"></el-table-column>
+        <el-table-column label="操作" min-width="100">
+          <template slot-scope="scope">
+            <el-button @click="editItem(scope.row)" type="text" size="small">编辑</el-button>
+            <el-button @click.native.prevent="deleteRow(scope.row.ID)" type="text" size="small">删除</el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+    </div>
+    <div class="block" style="margin:20px 0;">
+      <el-pagination
+        background
+        @current-change="handleCurrentChange"
+        :current-page="currentPage"
+        :page-size="pageSize"
+        layout="total, prev, pager, next, jumper"
+        :total="adicsCount">
+      </el-pagination>
+    </div>
+    <addEdit ref='addEdit'></addEdit>
+	</div>
+</template>
+<script>
+  import addEdit from './addEdit'
+	export default {
+
+    name: "NursingCS",
+
+    components : { addEdit },
+
+    data(){
+      return {
+        modelList : [],//table
+        keyword : '',
+        pageSize : 20,
+        currentPage : 1,//当前页
+        adicsCount : 0,//总数
+      }
+    },
+
+    mounted(){
+      this.$nextTick(()=> {
+        this.getData(1)
+      })
+    },
+
+		methods: {
+      //获取列表
+      getData(page){
+        this.currentPage = page ? page : this.currentPage;
+        this.getSer('datacenter/measurebank',{ keyword:this.keyword,page : this.currentPage}, res => {
+          console.log(res);
+          if(res.status <= 400){
+             this.modelList = res.data.items
+             this.adicsCount = parseInt(res.data.meta.totalCount)
+          }
+        })
+      },
+      handleCurrentChange(val) {       //当前页变化的时候
+        this.currentPage = val
+        this.getData()
+      },
+      add(){
+        this.$refs.addEdit.add()
+      },
+      editItem(row){
+        this.$refs.addEdit.edit(row)
+      },
+      //删除列表行
+      deleteRow(id){
+        this.$confirm('是否删除该护理措施?', '提示', {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+        }).then(() => {
+          this._delete('datacenter/measurebank/'+id,{id}, res => {
+          console.log(res)
+            if(res.status == 204){
+              this.getData(1);
+              this.$message({
+                type: 'success',
+                message: '删除成功!',
+              });
+            }
+          })
+        })
+      },
+
+		}
+	}
+</script>
+<style type="text/css" lang="stylus" scoped>
+  .search-bar
+  .text1
+    color #6C8B97
+    margin-bottom 20px
+    font-size 16px
+  .el-button
+    padding 12px 32px
+  &.el-button--text
+    padding 0
+  &.el-button--success
+    float right
+    background-color #11c462
+    &:hover
+      background-color #14d462
+
+</style>

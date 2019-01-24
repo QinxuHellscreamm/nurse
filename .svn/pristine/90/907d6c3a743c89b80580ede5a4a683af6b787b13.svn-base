@@ -1,0 +1,363 @@
+// The Vue build version to load with the `import` command
+// (runtime-only or standalone) has been set in webpack.base.conf with an alias.
+import Vue from 'vue'
+import '@/filters.js'
+import axios from 'axios'
+import qs from  'qs'
+import router from './router/router'
+import Vuex from "vuex"
+import store from "./store/store"
+import routeConfig from './router/routeConfig'
+import md5 from "js-md5"
+import _global from"./global"
+import App from './App'
+import ElementUI from 'element-ui';
+import 'element-ui/lib/theme-chalk/index.css'
+import Lodop from '@/LodopFuncs'
+
+
+// 引入echarts
+/*import echarts from 'echarts'
+Vue.prototype.$echarts = echarts*/
+// 引入Echarts
+var echarts = require('echarts/lib/echarts');
+// 引入折线图
+require('echarts/lib/chart/line');
+require('echarts/lib/chart/bar');
+// 引入提示框和标题组件
+require('echarts/lib/component/title');
+require('echarts/lib/component/tooltip');
+require("echarts/lib/component/graphic");
+require("echarts/lib/component/grid");
+require("echarts/lib/component/axisPointer");
+require("echarts/lib/component/legend");
+Vue.prototype.echarts = echarts
+
+
+
+
+Vue.config.productionTip = false
+
+/* eslint-disable no-new */
+Vue.use(ElementUI)
+Vue.use(Vuex)
+
+Vue.use(Lodop)
+
+Vue.use(echarts)
+
+
+
+const vvm = new Vue({
+  el: '#app',
+    router,
+    store,
+    components: { App },
+    render: h => h(App),
+    template: '<App/>'
+})
+Vue.prototype.GLOBAL=_global;
+
+Vue.prototype.$md5 = md5;
+Vue.prototype.trim = function Trim(str){return str.replace(/(^\s*)|(\s*$)/g, "")};
+Vue.prototype.$ajax = axios;
+
+Vue.prototype.getCookieVal = function(cname){   //获取cookie value
+  console.log(cname);
+  var name = cname + "=";
+  var ca = document.cookie.split(';');
+  for(var i=0; i<ca.length; i++) {
+    var c = ca[i];
+    while (c.charAt(0)==' ') c = c.substring(1);
+    if (c.indexOf(name) != -1) return c.substring(name.length, c.length);
+  }
+  return "";
+}
+Vue.prototype.delCookie=function(name) {                   //删除一个cookie
+  var exp = new Date();
+  exp.setTime(exp.getTime() - 1);
+  var cval = this.getCookieVal(name)
+  if (cval != null)
+    document.cookie = name + "=" + cval + ";expires=" + exp.toUTCString();
+}
+Vue.prototype.setCookie=function(name,value) {                   //修改一个cookie
+  var exp = new Date();0
+  exp.setTime(exp.getTime() + 86400000)
+  document.cookie = name + "=" + value + ";expires=" + exp.toUTCString();
+}
+Vue.prototype.getSer = function (url, obj, callback) {      /*签名get*/
+  const admin_id = decodeURIComponent(this.getCookieVal("admin_id"))
+  if (!admin_id) {
+    this.delCookie("admin_id")
+    this.delCookie("real_name")
+    this.delCookie("username")
+    this.delCookie("ward_arr")
+    this.$router.push("/login")
+  }
+  var str = ''
+  var md5str = ''
+  //const reg = /[`~!@#$^&*()+<>?:"{},.\/;'[\]]/ig  //这里不能包括 %  否则会提示 unable to decode value
+  for(var k in obj){
+    md5str += (obj[k]+'')
+    //if(typeof obj[k] == "string")  obj[k] = encodeURIComponent(obj[k]+'')
+    if(typeof obj[k] == "string")  obj[k] = encodeURIComponent(obj[k])  //这里不需要正则替换
+    str += ('&' + k + '=' + obj[k])
+  }
+  console.log(md5str)
+  console.log(url + "?sign=" + this.$md5(md5str+"8505e3c34b1ef63348051cd5efc908ba")+str);
+  this.$ajax.get(url + "?sign=" + this.$md5(md5str+"8505e3c34b1ef63348051cd5efc908ba")+str).then(function (res) {
+    // console.log(res.reponse);
+    callback(res);
+  }).catch(err => {
+
+  })
+}
+
+Vue.prototype.getSerin = function (url, obj, callback) {      /*签名get*/
+  const admin_id = 10001;
+  var str = ''
+  var md5str = ''
+  //const reg = /[`~!@#$^&*()+<>?:"{},.\/;'[\]]/ig  //这里不能包括 %  否则会提示 unable to decode value
+  for(var k in obj){
+    md5str += (obj[k]+'')
+    //if(typeof obj[k] == "string")  obj[k] = encodeURIComponent(obj[k]+'')
+    if(typeof obj[k] == "string")  obj[k] = encodeURIComponent(obj[k])  //这里不需要正则替换
+    str += ('&' + k + '=' + obj[k])
+  }
+  console.log(md5str)
+  console.log(url + "?sign=" + this.$md5(md5str+"8505e3c34b1ef63348051cd5efc908ba")+str);
+  this.$ajax.get(url + "?sign=" + this.$md5(md5str+"8505e3c34b1ef63348051cd5efc908ba")+str).then(function (res) {
+    // console.log(res.reponse);
+    callback(res);
+  }).catch(err => {
+
+  })
+}
+
+
+Vue.prototype._delete = function (url,obj,callback){
+  const admin_id = decodeURIComponent(this.getCookieVal("admin_id"));
+  if (!admin_id) {
+    this.delCookie("admin_id");
+    this.delCookie("real_name");
+    this.delCookie("username");
+    this.delCookie("ward_arr");
+    this.$router.push("/login");
+  }
+  var str = ''
+  var md5str = ''
+  for(var k in obj){
+
+    md5str += (obj[k]+'')
+    str += ('&' + k + '=' + obj[k])
+  }
+
+  this.$ajax.delete(url + "?sign=" + this.$md5(md5str+"8505e3c34b1ef63348051cd5efc908ba")+str).then(function (res) {
+    // console.log(res);
+    callback(res);
+  }).catch(err => {
+    console.log(err.response);
+  })
+}
+Vue.prototype._put = function (url,obj,callback){
+  const admin_id = decodeURIComponent(this.getCookieVal("admin_id"));
+
+  if (!admin_id) {
+    this.delCookie("admin_id");
+    this.delCookie("real_name");
+    this.delCookie("username");
+    this.delCookie("ward_arr");
+    this.$router.push("/login");
+  }
+  var md5_str = "";
+  var param = obj;
+
+  var values = Object.values(obj)
+
+  if (values.length > 0) {
+    for (var i = 0; i < values.length; i++) {
+      if (values[i] != null)
+      {
+        md5_str += values[i];
+      }
+    }
+
+    md5_str = this.$md5(md5_str + "8505e3c34b1ef63348051cd5efc908ba");
+
+    param.sign = md5_str
+
+
+    this.$ajax.put(url, param).then(function (res) {
+
+      callback(res);
+    }).then(err => {
+
+    })
+  }
+
+}
+
+Vue.prototype._putin = function (url,obj,callback){
+/*  const admin_id = decodeURIComponent(this.getCookieVal("admin_id"));
+
+  if (!admin_id) {
+    this.delCookie("admin_id");
+    this.delCookie("real_name");
+    this.delCookie("username");
+    this.delCookie("ward_arr");
+    this.$router.push("/login");
+  }*/
+  var md5_str = "";
+  var param = obj;
+
+  var values = Object.values(obj)
+
+  if (values.length > 0) {
+    for (var i = 0; i < values.length; i++) {
+      if (values[i] != null)
+      {
+        md5_str += values[i];
+      }
+    }
+
+    md5_str = this.$md5(md5_str + "8505e3c34b1ef63348051cd5efc908ba");
+
+    param.sign = md5_str
+
+
+    this.$ajax.put(url, param).then(function (res) {
+
+      callback(res);
+    }).then(err => {
+
+    })
+  }
+
+}
+/**
+ * @param url An object to which the this keyword can refer inside the new function.
+ * @param obj A list of arguments to be passed to the new function.
+ */
+  Vue.prototype.post = function (url, obj, callback) {      /*签名post*/
+    const admin_id = decodeURIComponent(this.getCookieVal("admin_id"));
+
+    if (!admin_id) {
+      this.delCookie("admin_id");
+      this.delCookie("real_name");
+      this.delCookie("username");
+      this.delCookie("ward_arr");
+      this.$router.push("/login");
+    }
+    var md5_str = "";
+    var param = obj;
+    if (obj.constructor == Array){
+      let str = JSON.stringify(obj)
+      this.$ajax.post(url, str).then(function (res) {
+
+        callback(res);
+      }).then(err => {
+
+      })
+      return
+    }
+
+    var values = Object.values(obj)
+    if (values.length > 0) {
+      for (var i = 0; i < values.length; i++) {
+        if(values[i] == null){
+          values[i] = ""
+        }
+        md5_str += values[i];
+      }
+
+      md5_str = this.$md5(md5_str + "8505e3c34b1ef63348051cd5efc908ba");
+
+      let sign = md5_str
+      //this.$set(param, "sign", md5_str)
+
+      this.$ajax.post(url, {...param,sign:sign}).then(function (res) {
+        callback(res);
+      }).then(err => {
+
+      })
+    }
+  }
+
+Vue.prototype.postin = function (url, obj, callback) {      /*签名post*/
+
+  var md5_str = "";
+  var param = obj;
+  if (obj.constructor == Array){
+    let str = JSON.stringify(obj)
+    this.$ajax.post(url, str).then(function (res) {
+
+      callback(res);
+    }).then(err => {
+
+    })
+    return
+  }
+
+  var values = Object.values(obj)
+  if (values.length > 0) {
+    for (var i = 0; i < values.length; i++) {
+      if(values[i] == null){
+        values[i] = ""
+      }
+      md5_str += values[i];
+    }
+
+    md5_str = this.$md5(md5_str + "8505e3c34b1ef63348051cd5efc908ba");
+
+    let sign = md5_str
+    //this.$set(param, "sign", md5_str)
+
+    this.$ajax.post(url, {...param,sign:sign}).then(function (res) {
+      callback(res);
+    }).then(err => {
+
+    })
+  }
+}
+
+//axios 請求拦截
+
+axios.interceptors.response.use(function(response){
+  if (response.status == '204'){
+    vvm.$message({
+      message: response.data.message,
+      duration:1000,
+      type: 'warning'
+    });
+  }
+  return response;
+},function(error){
+  //请求错误时做些事
+
+  if(error.response){
+    vvm.$message({
+      message: error.response.data.message,
+      duration:1000,
+      type: 'warning'
+    });
+  }
+
+
+  return error
+});
+
+
+var scrollFunc=function(e){
+  e=e || window.event;
+  if(e.wheelDelta && event.ctrlKey){//IE/Opera/Chrome
+    event.returnValue=false;
+  }else if(e.detail){//Firefox
+    event.returnValue=false;
+  }
+}
+
+/*注册事件*/
+if(document.addEventListener){
+  document.addEventListener('DOMMouseScroll',scrollFunc,false);
+}//W3C
+window.onmousewheel=document.onmousewheel=scrollFunc;

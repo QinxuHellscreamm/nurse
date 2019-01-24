@@ -1,0 +1,70 @@
+<template>
+  <div class="sidebar">
+    <ul class="sidelist">
+      <router-link tag="li" v-for="(item,index) of sideList" :class="classes[index]" :to="{path:'/nursingPlatform/'+item.url}" :key="index">{{item.name}}</router-link>
+    </ul>
+  </div>
+</template>
+<script>
+  export default{
+    data(){
+      return {
+        sideList: [
+          {name:"知识库",url:"knowledgeBase"},
+          {name:"字典管理",url:"dictionary"},
+          {name: "移动护士站", url: "mobileNurse"},
+          {name: "系统管理", url: "system"}
+        ],
+        classes: ["knowledgeBase","dictionary","mobilenurse","system"],
+      }
+    },
+  }
+</script>
+<style scoped lang="stylus">
+  .sidebar
+    width 184px
+    height calc(100% - 60px)
+    background #2F4263
+    padding-top 42px
+    text-align center
+    color #fff
+    -webkit-box-sizing border-box
+    -moz-box-sizing border-box
+    box-sizing border-box
+    position fixed
+    left 0
+    top 60px
+    z-index 900
+    .sidelist
+      li
+        line-height 50px
+        padding-left 70px
+        text-align left
+        cursor pointer
+        background-size 18px 20px
+        font-size 16px
+      .router-link-active
+        background-color #1C2E4C !important
+        a
+          color #fff
+          display inline-block
+          width 114px
+          height 64px
+      .all
+        background url("icon/overview.png") no-repeat 26px center
+        background-size 18px 18px !important
+      .nurse
+        background url("icon/nurse.png") no-repeat 26px center
+      .knowledgeBase
+        background url("icon/knowledge.png") no-repeat 26px center
+      .documentAdmin
+        background url("icon/document.png") no-repeat 26px center
+      .dictionary
+        background url("icon/dictionary.png") no-repeat 26px center
+      .mobilenurse
+        background url("icon/mobilenurse.png") no-repeat 26px center
+      .system
+        background url("icon/system.png") no-repeat 26px center
+        background-size 18px 18px !important
+
+</style>

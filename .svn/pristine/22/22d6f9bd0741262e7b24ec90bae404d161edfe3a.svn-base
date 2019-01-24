@@ -1,0 +1,23 @@
+<template>
+  <el-dialog :visible.sync="popshow" title='预览' width='960px'>
+    <el-date-picker v-model="begin_print" type="date" value-format="yyyy-MM-dd" @change='print_preview' placeholder="选择日期"></el-date-picker>
+    <el-date-picker v-model="end_print" type="date" @change='print' value-format="yyyy-MM-dd" placeholder="选择日期"></el-date-picker>
+    <div>
+      <div v-html='content'></div>
+    </div>
+    <div slot="footer" class="dialog-footer">
+      <el-button @click="popshow = false">取 消</el-button>
+      <el-button type='primary' @click='print'>打印</el-button>
+    </div>
+  </el-dialog>
+</template>
+
+<script>
+    export default {
+        name: "recordPrintPreview"
+    }
+</script>
+
+<style scoped>
+
+</style>

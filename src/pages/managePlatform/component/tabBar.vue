@@ -1,0 +1,45 @@
+<template>
+  <div id="container" style="height: 100%;">
+    <ul id="overT" class="over-t">
+      <router-link v-for="(item,index) of moduleList" :key="item" tag='li' :to="{path:'/managePlatform/'+page+'/'+content[index]}">{{item}}</router-link>
+      <router-link v-for="(item,index) of functionList" :key="index" tag='li' :to="{path:'/managePlatform/'+page+'/'+functionContnet[index]}">
+        {{item}}<i class='el-icon-close' @click='close(index)'></i>
+      </router-link>
+    </ul>
+    <router-view class="this_content"></router-view>
+  </div>
+</template>
+<script>
+  export default{
+    props : ['moduleList','content','page','functionList','functionContnet'],
+
+    methods : {
+      close(index){
+        this.$parent.closeTabBar(index)
+      }
+    }
+  }
+</script>
+<style scoped lang="stylus">
+  .over-t
+    display flex
+    padding-left 40px
+    background #F9F9FB
+    li
+      line-height 42px
+      margin-right 30px
+      border-bottom 2px solid transparent
+      cursor pointer
+      -webkit-box-sizing border-box
+      -moz-box-sizing border-box
+      box-sizing border-box
+      &.router-link-active
+        font-size 16px
+        color #00B3DC
+        border-bottom 2px solid #00B3DC
+  .this_content
+    padding 0 30px;
+    height calc(100% - 60px)
+
+
+</style>

@@ -1,0 +1,161 @@
+<template>
+  <div class='main-page'>
+
+    <div class="menu-top">
+      <label>检测时间</label>
+      <el-date-picker v-model="NURSING_AT" type="datetime" value-format="yyyy-MM-dd	HH:mm" format="yyyy-MM-dd	HH:mm" placeholder="选择日期" :clearable='false'></el-date-picker>
+      <label style='margin-left: 15px;'>血糖类型</label>
+      <el-select v-model='MONITORING_POINT' @change='patientsUpdate'>
+        <el-option v-for="item in options"  :key="item.label"  :label="item.label" :value="item.value"></el-option>
+      </el-select>
+      <el-button type='primary' style='margin-left: 10px;' @click='popshow = true'>筛选</el-button>
+      <el-button type='primary' style='margin-left: 10px;' @click='save'>保存</el-button>
+    </div>
+
+    <el-dialog :visible.sync="popshow" title='病人筛选' width='720px'>
+      <el-checkbox :indeterminate="isIndeterminate" v-model="checkAll" @change="handleCheckAllChange">全选</el-checkbox>
+      <div style="margin: 15px 0;"></div>
+      <el-checkbox-group v-model="tableList" @change="handleCheckedCitiesChange">
+        <el-checkbox v-for="(item,i) in patients" :label="item" :key="i">{{item.BED_NUMBER}}({{item.NAME}})</el-checkbox>
+      </el-checkbox-group>
+
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="popshow = false" type='primary'>关闭</el-button>
+      </div>
+
+    </el-dialog>
+    <el-table :data='tableList'>
+      <el-table-column label="床号"  prop='BED_NUMBER' width='80'></el-table-column>
+      <el-table-column label="姓名"  prop='NAME' width='100'></el-table-column>
+      <el-table-column label="血糖类型" width='120'>
+        <template slot-scope="{row}">
+          <el-select v-model='row.MONITORING_POINT' size='mini'>
+            <el-option v-for="item in options"  :key="item.label"  :label="item.label" :value="item.value"></el-option>
+          </el-select>
+        </template>
+      </el-table-column>
+      <el-table-column label="血糖结果" width='120'>
+        <template slot-scope="{row}">
+          <el-input v-model='row.BLOOD_GLUCOSE_RECORD' size='mini' maxlength='4' ></el-input>
+        </template>
+      </el-table-column>
+      <el-table-column label="备注" width='180'>
+        <template slot-scope="{row}">
+          <el-input v-model='row.REMARK' size='mini' maxlength='30'></el-input>
+        </template>
+      </el-table-column>
+      <el-table-column></el-table-column>
+    </el-table>
+  </div>
+</template>
+
+<script>
+
+  import { _YMDhms , _debounce } from "@/global"
+
+  export default {
+        name: "bloodSugarEntry",
+
+        data(){
+          return{
+            checkAll : false,
+            isIndeterminate : true,
+            popshow : false,
+            //👆筛选病人  👇列表
+            NURSING_AT : '',
+            MONITORING_POINT:'',
+            tableList : [],
+            patients : [],
+            options : [{label:'',value:''},{label:'0:00',value:'1'},{label:'3:00',value:'2'},{label:'早餐前',value:'3'},{label:'早餐后',value:'4'},{label:'午餐前',value:'5'},{label:'午餐后',value:'6'},{label:'晚餐前',value:'7'},{label:'晚餐后',value:'8'},{label:'22:00',value:'9'},{label:'随机血糖',value:'10'}],
+        }
+        },
+
+        methods:{
+          getPatient(){
+              this.getSer("datacenter/bed",{ filterfuc : 'in_hospital_bed_count' , page_size : 1000 , page : 1 , is_onlyprimary : 0, inpatient_number : '' }, res => {
+              console.log(res);
+              if(res.status<400){
+                res.data.items.forEach(item=>{
+                  item.MONITORING_POINT = ''
+                  item.BLOOD_GLUCOSE_RECORD = ''
+                  item.REMARK = ''
+                })
+                this.patients = res.data.items
+              }
+            })
+          },
+          patientsUpdate(type){
+            this.patients.forEach(item=>{
+              item.MONITORING_POINT = type
+            })
+          },
+          save : _debounce(function () {
+              var arr = []
+              var flag = true
+              this.tableList.forEach(item=>{
+                if(item.MONITORING_POINT){
+                  if(item.BLOOD_GLUCOSE_RECORD){
+                    arr.push({INPATIENT_NUMBER:item.INPATIENT_NUMBER, NURSING_AT:this.NURSING_AT, MONITORING_POINT:item.MONITORING_POINT, BLOOD_GLUCOSE_RECORD:item.BLOOD_GLUCOSE_RECORD, REMARK:item.REMARK})
+                  }else{
+                    flag = false
+                  }
+                }
+              })
+              if(!flag) {
+                this.$message({type: 'warning', message: '未填写血糖值的病人数据不会提交'})
+              }
+
+              this.post('datacenter/bloodsugarbatch',{data:JSON.stringify(arr)},res=>{
+                console.log(res);
+                if(res.status < 400){
+                  this.$message({type: 'success', message: '保存成功!'})
+                  this.getPatient()
+                }
+              })
+          }),
+
+          handleCheckAllChange(val) {
+            this.tableList = val ? this.patients : []
+            this.isIndeterminate = false;
+          },
+          handleCheckedCitiesChange(value) {
+            let checkedCount = value.length
+            this.checkAll = checkedCount === this.patients.length
+            this.isIndeterminate = checkedCount > 0 && checkedCount < this.patients.length
+          },
+        },
+
+        mounted(){
+          this.$nextTick(()=>{
+            this.NURSING_AT = _YMDhms()
+            this.getPatient()
+          })
+        }
+    }
+</script>
+
+<style scoped lang='stylus'>
+  .main-page
+    margin 20px
+    background-color #ffffff
+    height 100%
+    padding 0 20px
+    position relative
+    border-radius 4px
+    .menu-top
+      padding 20px 0 30px
+      label
+        margin-right 10px
+    .el-checkbox-group
+      .el-checkbox
+        line-height 30px
+        margin-right 30px
+        margin-left 0
+        &>>>.el-checkbox__label
+          width 116px
+          overflow: hidden;
+          text-overflow:ellipsis
+          white-space: nowrap
+          position relative
+          top 6px
+</style>

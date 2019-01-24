@@ -1,0 +1,374 @@
+<template>
+    <div class='shift_report'>
+      <div class='out-main'>
+       <div class='sort-box'>
+         <el-date-picker
+           v-model="date"
+           value-format='yyyy-MM-dd'
+           format="yyyy-MM-dd"
+           type="date" placeholder="选择日期">
+         </el-date-picker>
+         <el-select v-model="sortvalue" placeholder="请选择" @change="sortsele">
+           <el-option v-for="item in options" :key="item.ID" :label="item.NAME" :value="item.ID"></el-option>
+         </el-select>
+         <el-radio-group v-model="radio">
+           <el-radio :label="0">全部病人</el-radio>
+           <el-radio :label="1">责任床</el-radio>
+         </el-radio-group>
+         <el-button type='primary' class='serch-btn' @click="getData">搜索</el-button>
+       </div>
+        <div>
+          <el-table :data="census" style="width: 100%">
+            <el-table-column prop="address" :label="porject" ></el-table-column>
+            <el-table-column prop="sum" label="总数" ></el-table-column>
+            <el-table-column prop="sumcy" label="出院人数"></el-table-column>
+            <el-table-column prop="sumzc" label="转出人数"></el-table-column>
+            <el-table-column prop="sumsw" label="死亡人数"></el-table-column>
+            <el-table-column prop="sumry" label="入院人数"></el-table-column>
+            <el-table-column prop="sumzr" label="转入人数"></el-table-column>
+          </el-table>
+          <div class='desi'></div>
+        </div>
+        <div class='statistics'>
+          <projectList  ref='projectList'></projectList>
+
+        </div>
+        <div class='shift_record_head'>
+          <h1>
+            <span>交班记录</span>
+            <span>{{date}}</span>
+            <el-button type='success' @click='addShow'>新增</el-button>
+          </h1>
+        </div>
+        <div class='shift_record'>
+          <table  class="tablerec" frame=void cellspacing="0">
+            <tbody>
+            <tr v-for="(val,index) in recordDa">
+              <td>{{val.ID}}</td>
+              <td>{{val.NAME}}</td>
+              <td>{{val.SEX}}</td>
+              <td>{{val.AGE}}</td>
+              <td>{{val.DIAGNOSTIC_RESULTS}}</td>
+              <td>{{val.SHID0}}</td>
+              <td>{{val.SHID1}}</td>
+              <td>{{val.SHID2}}</td>
+              <td @click="ediGet(val,index)"><span>{{val.tol}}</span></td>
+            </tr>
+            </tbody>
+          </table>
+        </div>
+        <addShiftRecord ref='addShiftRecord' :titleText='titleText' :date="date" :sort="sort" :SHEET_ID="SHEET_ID"></addShiftRecord>
+        <ediShiftRecord ref='ediShiftRecord' :titleText='titleText' :date="date" :sort="sort" :SHEET_ID="SHEET_ID"></ediShiftRecord>
+
+
+      </div>
+    </div>
+</template>
+
+<script>
+
+  import addShiftRecord from './addShiftRecord'
+  import ediShiftRecord from './ediShiftRecord'
+  import projectList from './projectList'
+ // import recordList from './recordList'
+    export default {
+      name: "shiftReport",
+
+      components : { addShiftRecord ,projectList ,ediShiftRecord},
+      data(){
+        return{
+          date : '',
+          options : [],
+          sortvalue :"",
+          radio : 0,
+          census : [{
+            address:"统计人数",
+            sum:"0",
+            sumcy:"0",
+            sumzc:"0",
+            sumsw:"0",
+            sumry:"0",
+            sumzr:"0",
+          }],
+          porject : '项目',
+          flag : false ,
+          titleText : '',
+          inputText:'',
+          titleobj:'',
+          ruleForm:[],
+          ban_end:'',
+          typenum:[],
+         // recordList:[],
+
+          sheet:[],
+          sort:'1',
+          SHEET_ID:'',
+          recordSheet: [
+            {
+              "SH_ID": "",
+              "SHEET_NMAE": " 1",
+              "SCHEDULE_DATE": "",
+              "SHEET_SORT": "",
+              "ROWNUMID": ""
+            },
+            {
+              "SH_ID": "",
+              "SHEET_NMAE": " 2",
+              "SCHEDULE_DATE": "",
+              "SHEET_SORT": "",
+              "ROWNUMID": ""
+            },
+            {
+              "SH_ID": "",
+              "SHEET_NMAE": " 3",
+              "SCHEDULE_DATE": "",
+              "SHEET_SORT": "",
+              "ROWNUMID": ""
+            }
+          ],
+          RECORDA:[],
+          RECORDB:[],
+          recordDa:[],
+          str:'',
+        }
+      },
+
+      methods : {
+        dataTime(){
+          let date = new Date()
+          let y = date.getFullYear()
+          let m = date.getMonth() + 1 > 9 ? date.getMonth() + 1 : '0'+ (date.getMonth() + 1)
+          let d = date.getDate()
+          d = d < 10 ? ('0' + d) : d;
+          let h = date.getHours();
+          h = h < 10 ? ('0' + h) : h;
+          let mi = date.getMinutes();
+          mi = mi < 10 ? ('0' + mi) : mi;
+          let se = date.getSeconds();
+          se = se < 10 ? ('0' + se) : se;
+          this.str = y + '-' + m + '-' + d
+          this.date =  this.str
+        },
+        ediGet(val,index){
+          console.log("编辑",val,index)
+          if(index!=0){
+            this.$refs.ediShiftRecord.popshow = true
+            this.$refs.ediShiftRecord.type = 'add'
+            this.$refs.ediShiftRecord.edigrtData(val)
+          }else {
+
+          }
+
+        },
+        flagTime(){
+          this.getSer("datacenter/shift" ,{
+            war_id:decodeURIComponent(this.getCookieVal("ward_id")),
+          }, (res) => {
+          this.options = res.data.items
+          console.log("班次",this.options)
+          this.sortvalue = this.options[0].ID
+          this.sort = this.options[0].SORT
+          console.log("班次序号11",this.sort)
+          this.titleText = '交班记录'+'('+this.options[0].NAME+')'
+          this.ban_end = this.options[0].END_TIME
+          this.porject = '项目'+'('+this.options[0].NAME+')'
+          })
+        },
+        sortsele(vId){
+          let obj = {};
+          obj = this.options.find((item)=>{
+              return item.ID === vId;
+        });
+          this.titleobj = obj.NAME
+          this.sort = obj.SORT
+          this.ban_end = obj.END_TIME
+          this.SHEET_ID = obj.ID
+          this.titleText = '交班记录'+'('+this.titleobj+')'
+          this.porject = '项目'+'('+this.titleobj+')'
+        },
+        getData(){
+          console.log("班次序号",this.sort)
+         /* let war_id = this.$store.state.userinfo.ward_id*/
+          let nurse_id = decodeURIComponent(this.getCookieVal("nurse_id"))
+          this.getSer("datacenter/changeshift" ,{
+            stamp:this.date,
+            sort:this.sort,
+            ban_end:this.ban_end,
+            war_id:decodeURIComponent(this.getCookieVal("ward_id")),
+            nurse_id:nurse_id,
+            type:this.radio,
+          }, (res) => {
+
+          this.ruleForm = res.data.items
+          console.log("交班",this.ruleForm)
+          this.census[0].sum = this.ruleForm.census.sum
+          //this.recordList =  this.ruleForm.record_sheet
+
+          var tableTitle = {"ID":"ID", "NAME":"姓名", "SEX":"性别", "AGE":"年龄", "DIAGNOSTIC_RESULTS":"诊断","tol":"操作",};
+
+          tableTitle["SHID0"] = this.ruleForm.sheet[0].SHEET_NMAE;
+          tableTitle["SHID1"] = this.ruleForm.sheet[1].SHEET_NMAE;
+          tableTitle["SHID2"] = this.ruleForm.sheet[2].SHEET_NMAE;
+          this.recordDa=[]
+          this.recordDa[0] = tableTitle;
+          this.ruleForm.record_sheet.forEach((item , i) => {
+            this.recordDa[i+1] = {ID:item.ID,NAME:item.NAME,SEX:item.SEX,AGE:item.AGE,DIAGNOSTIC_RESULTS:item.DIAGNOSTIC_RESULTS,tol:'编辑'};
+          item.record_content.forEach(itemRecord =>{
+            if(itemRecord.SHEET_ID == this.ruleForm.sheet[0].SH_ID ){
+            this.recordDa[i+1]["SHID0"] = itemRecord.RECORD;
+          }else {this.recordDa[i+1]["SHID0"] = ""}
+          if(itemRecord.SHEET_ID == this.ruleForm.sheet[1].SH_ID){
+            this.recordDa[i+1]["SHID1"] = itemRecord.RECORD;
+          }else {this.recordDa[i+1]["SHID0"] = ""}
+          if(itemRecord.SHEET_ID == this.ruleForm.sheet[2].SH_ID){
+            this.recordDa[i+1]["SHID2"] = itemRecord.RECORD;
+          }else {this.recordDa[i+1]["SHID0"] = ""}
+
+        });
+
+        })
+          console.log("tableTitle", this.recordDa);
+          var val = this.ruleForm.typenum
+          this.$refs.projectList.grtData(val)
+
+
+            this.ruleForm.census.type.forEach((item , i) => {
+              if(item.LABEL_NAME == "出院人数"){
+                  this.census[0].sumcy = item.NUM
+              }
+              if(item.LABEL_NAME == "转出人数"){
+                this.census[0].sumzc = item.NUM
+              }
+            if(item.LABEL_NAME == "转出人数"){
+                this.census[0].sumzc = item.NUM
+              }
+            if(item.LABEL_NAME == "死亡人数"){
+                this.census[0].sumsw = item.NUM
+              }
+            if(item.LABEL_NAME == "入院人数"){
+                this.census[0].sumry = item.NUM
+              }
+            if(item.LABEL_NAME == "转入人数"){
+                this.census[0].sumzr = item.NUM
+              }
+            })
+        })
+        },
+        addShow(){
+          this.$refs.addShiftRecord.popshow = true
+          this.$refs.addShiftRecord.type = 'add'
+          this.$refs.addShiftRecord.grtData()
+        }
+      },
+/*      watch: {
+        'this.sortvalue'(val, oldVal){
+          console.log("a: " + val, oldVal);
+        },
+      },*/
+      mounted(){
+        this.$nextTick(()=>{
+          this.dataTime()
+          this.flagTime()
+          this.getData()
+        })
+      },
+
+    }
+</script>
+
+<style scoped lang='stylus'>
+  .shift_report
+    margin 20px
+    .sort-box
+      margin 20px 0
+      .el-date-editor
+        &>>>.el-input__inner
+          line-height 36px
+          background #F9F9FB
+          height 36px
+        &>>>.el-input__icon
+          line-height 36px
+      .el-select
+        margin-left 10px
+        &>>>.el-input__inner
+          line-height 36px
+          background #F9F9FB
+          height 36px
+        &>>>.el-input__icon
+          line-height 36px
+          height 36px
+      .el-radio-group
+        margin-left 20px
+      .is-checked
+        &>>>.el-radio__inner
+          border-color #00CACF
+          background #00CACF
+        >>>.el-radio__label
+            color #606266
+      .serch-btn
+        padding 10px 32px !important
+        margin-left 10px
+        background #00B3DC
+        border-color #00B3DC
+    .desi
+      border-bottom 1px #dddddd dashed
+      margin 10px 0
+  .el-table::before
+    height 0
+  .statistics
+    ul
+      li
+        line-height 36px
+        display flex
+        .licell1
+          background-color #F9F9FB
+          width 200px
+          text-align center
+          border 4px solid #FFFFFF
+        .licell2
+          background-color #F9F9FB
+          flex 1
+          display flex
+          border 4px solid #FFFFFF
+          padding 0 10px 0 20px
+          .el-icon-plus
+            margin-left 5px
+          .el-input
+            margin-left 15px
+            &>>>.el-input__inner
+              line-height 30px
+              height 30px
+  .shift_record_head
+    margin 15px 0
+    span
+      font-size 16px
+      font-weight 600
+    .el-button--success
+      padding 10px 32px !important
+      margin-left 20px
+  .shift_record
+    font-size 14px
+    >>> .el-table::before
+      z-index inherit
+    .tablerec
+      width 100%
+      tr:nth-child(1)
+        background #fff
+        td
+          font-size 16px
+          color #6C8B97 !important
+          span
+            cursor not-allowed !important
+            pointer-events:none
+      tr
+        line-height 32px
+        background #F9F9FB
+        td
+          border-bottom 4px solid #fff
+        td:last-child
+          color #00B3DC
+          span
+            cursor pointer
+
+
+</style>

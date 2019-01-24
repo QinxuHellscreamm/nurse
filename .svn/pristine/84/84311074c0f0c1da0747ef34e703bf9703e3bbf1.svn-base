@@ -1,0 +1,216 @@
+<template>
+  <div class="record">
+    <div class='list'>
+      <div class='top-menu'>
+        <el-button class="trend" @click='dialogShow'>新增记录</el-button>
+        <el-button class="trend" @click='statistics' v-if='IS_COUNT == 1'>出量统计</el-button>
+        <span style='margin-left: 10px'>开始时间</span>
+        <el-date-picker v-model="begin" type="date" value-format="yyyy-MM-dd" placeholder="选择日期"></el-date-picker>
+        <span style='margin-left: 10px'>结束时间</span>
+        <el-date-picker v-model="end" type="date" value-format="yyyy-MM-dd" placeholder="选择日期"></el-date-picker>
+        <print style='position:relative;top:2px;margin-left: 10px;'></print>
+      </div>
+      <div ref='print' style='width: 100%;'>
+        <h1 style='font-size: 20px;text-align: center; margin: 0 0 20px'>{{TEMPLATE_NAME}}</h1>
+        <div class="from-header" style='border: none;' v-if='HEADER2.length'>
+          <div v-for='item of HEADER2'>
+            <label>{{item.NODE_NAME}}:</label>
+            <span>{{item.VALUE}}</span>
+          </div>
+        </div>
+        <div class="from-header" v-if='HEADER.length'>
+          <div v-for='item of HEADER'>
+            <label>{{item.NODE_NAME}}:</label>
+            <span>{{item.VALUE}}</span>
+          </div>
+        </div>
+        <div class='no-out-main'>
+          <el-table :data='LIST' @row-contextmenu='rightClick'>
+            <el-table-column :label="item.NODE_NAME"  :prop='item.ID' min-width="80" v-for='(item,index) of tables' :key='index' :width='item.INPUT_MODE == 2 ? 400 : ""'>
+              <el-table-column v-for='item1 of item.CHILD' :label="item1.NODE_NAME" :prop='item1.ID' :key='item1.ID'>
+                <el-table-column v-for='item2 of item1.CHILD' :label="item2.NODE_NAME" :prop='item2.ID' :key='item2.ID'>
+                  <el-table-column v-for='item3 of item2.CHILD' :label="item3.NODE_NAME" :prop='item3.ID' :key='item3.ID'></el-table-column>
+                </el-table-column>
+              </el-table-column>
+            </el-table-column>
+          </el-table>
+        </div>
+      </div>
+
+    </div>
+    <addRecord ref='addRecord' :id='id' :INPATIENT_NUMBER='INPATIENT_NUMBER' :detile='detile'></addRecord>
+    <div class="fixed" ref='fix' v-show='fixShow' @mouseout='out'>
+      <div class='edit' @click='edit'>编辑</div>
+      <div @click='del'>删除</div>
+    </div>
+    <statistics :INPATIENT_NUMBER='INPATIENT_NUMBER' :id='id' ref='statistics'></statistics>
+    <record-print-Preview :TEMPLATE_NAME='TEMPLATE_NAME' :HEADER='HEADER' :HEADER2="HEADER2" ref='preview' :INPATIENT_NUMBER='INPATIENT_NUMBER' :id='id' :items='items'></record-print-Preview>
+  </div>
+</template>
+
+<script>
+  import print from '@/components/print'
+  import addRecord from './addRecord'
+  import statistics from './statistics'
+  import recordPrintPreview from './recordPrintPreview'
+    export default {
+
+      name: "record",
+
+      props: ['id','INPATIENT_NUMBER','detile'],
+
+      components:{ addRecord,print,statistics,recordPrintPreview },
+
+      data() {
+        return {
+          tables : [],
+          LIST:[],
+          TEMPLATE_NAME : '',
+          HEADER:[],
+          HEADER2:[],
+          fixShow : false,
+          content : '',
+          begin : '',
+          end : '',
+          items : 0,
+          IS_COUNT:''
+        }
+      },
+
+      created() {
+        this.$nextTick(() => {
+          this.getList()
+        })
+      },
+
+      methods: {
+        dialogShow(){
+          this.$refs.addRecord.getData()
+        },
+        getList(){
+          this.tables = []
+          this.getSer('datacenter/questionnaire',{ TYPE : 2 , TEMPLATE_ID : this.id , INPATIENT_NUMBER : this.INPATIENT_NUMBER , BEGIN:this.begin,END:this.end },res=>{
+            console.log(res);
+            this.TEMPLATE_NAME = res.data.TEMPLATE_NAME
+            this.tables = res.data.tables
+            this.HEADER = []
+            this.HEADER2 = []
+            this.IS_COUNT = res.data.IS_COUNT
+            this.LIST = res.data.items
+            this.items = res.data.items.length
+            res.data.headers.forEach(item=>{
+              item.IS_NEW_LINE == 1 ? this.HEADER2.push(item) : this.HEADER.push(item)
+            })
+            console.log(this.LIST)
+          })
+        },
+        rightClick(obj,e){
+          e.preventDefault()
+          console.log(obj,e)
+          this.obj = obj
+          this.fixShow = true
+          this.$refs.fix.style.left = e.clientX - 40 + 'px'
+          this.$refs.fix.style.top = e.clientY - 30 + 'px'
+          this.fixShow = true
+        },
+        out(e){
+          if(e.toElement.className == 'right' || e.toElement.className == 'cell' || e.toElement.lastChild.className == 'cell') this.fixShow = false
+        },
+        edit(){
+          this.fixShow = false
+          this.$refs.addRecord.setData(this.obj.ID)
+        },
+        del(){
+          this._delete('datacenter/questionnaire/' + this.obj.ID,{ id : this.obj.ID },res => {
+            if(res.status == 204){
+              this.$message({type: 'success', message: '删除成功!'})
+              this.getList()
+              this.editId == this.obj.ID ? this.getData() : null
+            }
+          })
+        },
+        print_preview(){
+          this.$refs.preview.getPage()
+        },
+        statistics(){
+          this.$refs.statistics.show()
+        }
+      },
+
+      watch:{
+        'id':function (id) {
+          console.log(id)
+          this.getList()
+        },
+        'begin':function () {
+          this.getList()
+        },
+        'end':function () {
+          this.getList()
+        },
+        'begin_print':function () {
+          this.print_preview
+        },
+        'end_print':function () {
+          this.print_preview
+        }
+      }
+    }
+</script>
+
+<style scoped lang='stylus'>
+  .record
+    display flex
+    height 100%
+    flex 1
+    overflow-x auto
+    .list
+      flex 1
+      .from-header
+        display flex
+        padding 10px 20px
+        border-bottom 1px solid #D8E3E7
+        div
+          flex 1
+          label,span
+            color #1A2C4E
+            font-size 12px
+      .out-main
+        box-shadow 0 0 0 0 #FFFFFF
+      .top-menu
+        overflow hidden
+        margin 12px 20px
+        .trend
+          padding 13px 20px!important
+          border none
+          background-color #DDEFF9
+          color #00B3DC
+          float left
+    .fixed
+      position fixed
+      width 80px
+      height 60px
+      background-color #FFFFFF
+      border 1px solid #dddddd
+      z-index 2000
+      div
+        height 30px
+        line-height 30px
+        text-align center
+        &:hover
+          background-color #ddeff9
+      .edit
+        border-bottom 1px solid #dddddd
+    .el-table
+      &>>>.el-table__header-wrapper,&>>>.el-table__body-wrapper
+        .cell
+          font-size 12px
+          color #2B3A50
+          text-align center
+      &>>>.el-table__header-wrapper
+        thead
+          th
+            border-right 1px solid #D8E3E7
+            border-bottom 1px solid #D8E3E7
+            text-align center
+</style>

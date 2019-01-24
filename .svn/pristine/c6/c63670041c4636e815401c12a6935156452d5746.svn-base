@@ -1,0 +1,114 @@
+{
+  "_from": "print",
+  "_id": "print@1.1.0",
+  "_inBundle": false,
+  "_integrity": "sha512-T6E8V86DDNi2ufBoAfMbZOelsh/6xn9Gp9bPAsxZQNM3DegEow2iwhr3nxD0zVYwqRbKY5hjSMYRQoSVZepZGA==",
+  "_location": "/print",
+  "_phantomChildren": {},
+  "_requested": {
+    "type": "tag",
+    "registry": true,
+    "raw": "print",
+    "name": "print",
+    "escapedName": "print",
+    "rawSpec": "",
+    "saveSpec": null,
+    "fetchSpec": "latest"
+  },
+  "_requiredBy": [
+    "#USER",
+    "/"
+  ],
+  "_resolved": "https://registry.npmjs.org/print/-/print-1.1.0.tgz",
+  "_shasum": "207f3e38feb2cecee9c3f23be6043d8464a74695",
+  "_spec": "print",
+  "_where": "G:\\work\\html",
+  "author": {
+    "name": "John Gardner",
+    "email": "gardnerjohng@gmail.com"
+  },
+  "bugs": {
+    "url": "https://github.com/Alhadis/Print/issues"
+  },
+  "bundleDependencies": false,
+  "deprecated": false,
+  "description": "Generate a human-readable representation of a value.",
+  "devDependencies": {
+    "chai": "*",
+    "eslint": "*",
+    "mocha": "*"
+  },
+  "engines": {
+    "node": ">=6.0.0"
+  },
+  "eslintConfig": {
+    "extends": "eslint:recommended",
+    "env": {
+      "es6": true,
+      "mocha": true,
+      "node": true
+    },
+    "parserOptions": {
+      "ecmaVersion": 2017,
+      "sourceType": "module"
+    },
+    "rules": {
+      "indent": [
+        "error",
+        "tab",
+        {
+          "ignoreComments": true,
+          "SwitchCase": 1
+        }
+      ],
+      "linebreak-style": [
+        "error",
+        "unix"
+      ],
+      "no-console": 0,
+      "no-empty": 0,
+      "quotes": [
+        "error",
+        "double",
+        {
+          "avoidEscape": true
+        }
+      ],
+      "semi": [
+        "error",
+        "always"
+      ],
+      "spaced-comment": [
+        "error",
+        "always"
+      ]
+    }
+  },
+  "eslintIgnore": [
+    "test/fixtures/*.js"
+  ],
+  "files": [
+    "print.js"
+  ],
+  "homepage": "https://github.com/Alhadis/Print#readme",
+  "keywords": [
+    "stringify",
+    "trace",
+    "debug",
+    "outline",
+    "format",
+    "string"
+  ],
+  "license": "ISC",
+  "main": "print.js",
+  "name": "print",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Alhadis/Print.git"
+  },
+  "scripts": {
+    "lint": "npx eslint .",
+    "test": "mocha"
+  },
+  "version": "1.1.0"
+}

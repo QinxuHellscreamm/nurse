@@ -1,0 +1,257 @@
+<template>
+  <div>
+    <div class="out-top">
+      <span>时间</span>
+      <el-date-picker
+        v-model="start_end_time"
+        type="datetimerange"
+        value-format='yyyy-MM-dd	HH:mm'
+        format="yyyy-MM-dd	HH:mm"
+        range-separator="至"
+        start-placeholder="开始日期"
+        end-placeholder="结束日期">
+      </el-date-picker>
+      <span>病区</span>
+      <el-select v-model="department" filterable placeholder="病区" @change="getID">
+        <el-option
+          v-for="item in wardTes"
+          :key="item.ID"
+          :label="item.NAME"
+          :value="item">
+        </el-option>
+      </el-select>
+      <el-button type='primary' @click="pageAjax()">搜索</el-button>
+    </div>
+    <div id="echarts" :style="{ height: '500px'}" ></div>
+  </div>
+</template>
+<script>
+  export default{
+    props : ['type'],
+
+    data(){
+      return {
+        /*date: new Date()*/
+        start_end_time: [],
+        end_time : "",
+        graphiData:'',
+        department:'骨科一病区',
+        department_id:"10015",
+        restaurants:[],
+        wardTes:[],
+        strF:'',
+        str:'',
+        dataForm:[],
+      }
+    },
+
+    mounted() {
+      this.$nextTick(() => {
+        this.dataTime()
+        this.ward()
+        this.pageAjax()
+    })
+    },
+    methods:{
+      dataTime(){
+        let date = new Date()
+        let y = date.getFullYear()
+        let m = date.getMonth() + 1 > 9 ? date.getMonth() + 1 : '0'+ (date.getMonth() + 1)
+        let d = date.getDate()
+        d = d < 10 ? ('0' + d) : d;
+        let h = date.getHours();
+        h = h < 10 ? ('0' + h) : h;
+        let mi = date.getMinutes();
+        mi = mi < 10 ? ('0' + mi) : mi;
+        let se = date.getSeconds();
+        se = se < 10 ? ('0' + se) : se;
+        this.strF = y + '-' + '01' + '-' + '01' + " " + '00' + ":" + '00'
+        this.str = y + '-' + m + '-' + d + " " + h + ":" + mi
+        this.start_end_time.push(this.strF,this.str);
+        this.start_end_time[0]=this.strF;
+        this.start_end_time[1]=this.str;
+      },
+      ward(){
+        this.getSer("datacenter/ward" ,{}, (res) => {
+          this.wardTes = res.data.items;
+      })
+      },
+      getID(item){
+        this.department = item.NAME
+        this.department_id = item.ID
+      },
+      pageAjax(){
+        let myChart = this.echarts.init(document.getElementById('echarts'))
+        myChart.clear();
+        //请求数据response
+        this.getSer("datacenter/infaustevent/count" ,{
+          item:this.type,
+          ward_id:this.department_id,
+          start_time: (this.start_end_time ? this.start_end_time[0] : '') ,
+          end_time: (this.start_end_time ? this.start_end_time[1] : '') ,
+        }, (res) => {
+          this.dataForm = res.data.data
+        console.log("5222",this.dataForm)
+        myChart.setOption(this.chartInit())
+      })
+      },
+
+      chartInit(){
+        var xarr=[]
+        var title=[]
+        var percentage=[]
+        this.dataForm.forEach((item , i) => {
+          xarr.push(item.item_count)
+          title.push(item.item_name)
+          percentage.push(item.item_count_percentage)
+        })
+        function getTableLine(num) {
+          var list = [];
+          var bottom = 112;
+          var height = 30;
+          for (var i = 0; i < num; i++) {
+            list.push({
+              type: 'line',
+              bottom: bottom - i * height,
+              right: 20,
+              style: {
+                fill: '#333',
+                stroke:'#dfdfdf'
+              },
+              shape: {
+                x1: 0,
+                y1: 0,
+                x2: 2000,//下划线偏离
+                y2: 0
+              }
+            });
+          }
+          return list;
+        }
+        var lineList = getTableLine(3);//3行
+        return {
+          title: [{
+            text: '\n'+ '例数'+'\n比例',
+            bottom: 98,
+            left: 10,
+            textStyle: {
+              lineHeight:30,
+              fontSize: 13,
+              fontWeight: 'normal',
+              formatter: function(value) {
+                return '{table|' + value + '}';
+              },
+              rich: {
+                table: {
+                  align: 'center'
+                }
+              }
+            }
+          }],
+          tooltip: {
+            trigger: 'axis',
+            axisPointer: {
+              type : 'shadow',
+              label: {
+                backgroundColor: '#283b56'
+              }
+            }
+          },
+          grid: {
+            bottom: 150,
+            left: 120,
+            right: 20
+          },
+
+          xAxis: [{
+            type: 'category',
+            data: title,
+            axisTick: {
+              show:true,
+              length:98    //x轴垂直线长度
+            },
+            axisLine: {
+              onZero:false,  //从最低值开始计算
+              lineStyle:{
+                color:'#D1D1D1'
+              }
+            },
+            axisLabel: {
+              interval:0,
+              textStyle: {
+                fontWeight: 'normal',
+                fontSize: '12',
+                color:"#666"
+              },
+              formatter: function(value, index) {
+
+                return '{table|' + value +
+                  '}\n{table|' + (xarr[index]) +
+                  '}\n{table|' + (percentage[index]) +
+                  '}';
+
+              },
+              rich: {
+                table: {
+                  lineHeight: 30,
+                  align: 'center'
+                },
+                lineStyle:{
+                  color:'#D1D1D1'
+                }
+              }
+            }
+          }],
+          yAxis: [{
+            type: 'value',
+            splitNumber:4,
+            axisLine: {
+              show: true,
+              lineStyle:{
+                color:'#D1D1D1'
+              }
+            },
+            axisLabel: {
+              textStyle: {
+                fontWeight: 'normal',
+                fontSize: '12',
+                color:"#666"
+              }
+            },
+          }],
+          series: [{
+            type: 'bar',
+            barWidth : 30,
+            data: xarr,
+            itemStyle: {
+              normal:{
+                color: ['#00CACF']
+              },
+              emphasis: {
+                shadowBlur: 10,
+                shadowOffsetX: 0,
+                shadowColor: 'rgba(0, 0, 0, 0.5)',
+                position:'center'
+              }
+            },
+          }],
+          graphic: lineList
+        };
+      },
+    },
+  }
+</script>
+<style scoped lang="stylus">
+.out-top >>> .el-input__inner
+  background #fff
+  .out-top
+    .el-input
+      width 240px
+      margin-right 10px
+      &>>>.el-input__inner
+        width 240px
+    .el-select
+      margin-right 10px
+  .el-button
+    padding 12px 32px
+</style>

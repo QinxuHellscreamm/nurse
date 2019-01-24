@@ -1,0 +1,39 @@
+<template>
+    <div style='overflow: hidden;background-color: #f3f3f8;'>
+       <doc v-for='(item,index) of routerList' :key='index' v-if='item.id' v-show='item.id == $route.params.id' :id='item.id'></doc>
+    </div>
+</template>
+
+<script>
+  import doc from '../PatientDOC/doc'
+    export default {
+        name : "grantpatientDOC",
+
+        components : { doc },
+
+        data(){
+          return{
+            routerList : []
+          }
+        },
+
+        mounted(){
+          this.$nextTick(() => {
+            this.routerList = this.$store.state.patientDocList
+            console.log(this.routerList)
+          })
+        },
+
+        watch : {
+          '$store.state.patientDocList': {
+            handler(newValue, oldValue) {
+              this.routerList = newValue
+              console.log(this.routerList);
+              console.log(this.$route.params.id);
+            },
+            deep : true
+          }
+        }
+    }
+</script>
+

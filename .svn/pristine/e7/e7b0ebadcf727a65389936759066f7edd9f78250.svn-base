@@ -1,0 +1,455 @@
+<template>
+    <div style='padding:20px; background-color: #FFFFFF'>
+      <div class='setting'>
+        <el-button class='entry' @click='signEntry' v-if='$route.name != "infoshare"'>体征录入</el-button>
+
+        <el-button class='entry' @click='eventEntry' v-if='$route.name != "infoshare"'>事件录入</el-button>
+
+        <el-button type='success' @click='getData'>刷新</el-button>
+        <el-button class='left' @click='date--'><i class="el-icon-caret-left"></i></el-button>
+        <el-select v-model="date" placeholder="请选择" class='date'>
+          <el-option v-for="item in options" :key="item.value" :label="item.label" :value="item.value"></el-option>
+        </el-select>
+        <el-button class='right' @click='date++'><i class="el-icon-caret-right"></i></el-button>
+        <el-select v-model="scale" placeholder="缩放比例" class='date'>
+          <el-option  label="120%" value="1.2"></el-option>
+          <el-option  label="110%" value="1.1"></el-option>
+          <el-option  label="100%" value="1"></el-option>
+          <el-option  label="90%" value="0.9"></el-option>
+          <el-option  label="80%" value="0.8"></el-option>
+          <el-option  label="70%" value="0.7"></el-option>
+        </el-select>
+
+        <el-button type='primary' @click='print' style='margin-left: 10px;'>打印</el-button>
+      </div>
+      <svg width='850' height='1414' ref="print" :style='{transform:"scale("+scale+")"}' style='transform-origin: 10px 10px;'>
+        <foreignObject x="0" y="0" width="850" height="1240">
+          <div>
+            <h2 style='width: 850px;text-align: center; font-size: 16px;line-height: 30px;'>{{HOSPITAL}}体温单</h2>
+            <p style='display: flex;width: 850px;' id='p'>
+              <span style='margin: 10px 12px;'>姓名：{{detile.NAME}}</span>
+              <span style='margin: 10px 12px;'>性别：{{detile.SEX}}</span>
+              <span style='margin: 10px 12px;'>年龄：{{detile.AGE}}</span>
+              <span style='margin: 10px 12px;'>科室：{{depaBedInfo.DEPA}}</span>
+              <span style='margin: 10px 12px;'>床号：{{depaBedInfo.BED}}</span>
+              <span style='margin: 10px 12px;'>住院号：{{detile.MEDICAL_RECORD_NUM}}</span>
+              <span style='margin: 10px 12px;'>入院日期：{{detile.HOSPITALIZED_DATE.slice(0,10)}}</span>
+            </p>
+            <div style='position: relative;'>
+              <table border="1" cellspacing="0" width='850' align="center">
+                <thead>
+                <tr>
+                  <th height='20px' :colspan='6*ten' width='75' class='red'>日期</th>
+                  <th height='20px' :colspan='6*ten' width='75' v-for='item of dateFormatArr' class='red'>{{item}}</th>
+                </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td height='20px' :colspan='6*ten' class='red'>住院天数</td>
+                    <td height='20px' :colspan='6*ten' v-for='item of inHospitalDays' class='red'>{{item}}</td>
+                  </tr>
+                  <tr>
+                    <td height='20px' :colspan='6*ten' class='red'>手术后天数</td>
+                    <td height='20px' :colspan='6*ten' v-for='item of ss_events' class='red'>{{item.days}}</td>
+                  </tr>
+                  <tr>
+                    <td :colspan='6*ten' class='red'>时间</td>
+                    <td height='14px' width='14px' v-for='(item,index) of td42null' :key=index :colspan='ten' :class='{"red":index % 6 == 5}'>{{ index % 6*4+2 }}</td>
+                  </tr>
+                  <tr>
+                  </tr>
+                  <tr>
+                    <td :colspan='3*ten' height='14px'>脉搏</td>
+                    <td :colspan='3*ten' height='14px' class='red'>体温</td>
+                    <td v-for='(item,index) of td42null' :key=index height='14px' width='14px' :colspan='ten' :class='{"red":index % 6 == 5}'></td>
+                  </tr>
+
+                  <template v-for='(item,i) of pulseTemperature'>
+                    <tr>
+                      <td :colspan='3*ten' rowspan='10' class='border-r' valign="center" style='padding: 0;margin: 0;'>
+                        <div style='height:35px;line-height: 34px;border-bottom:1px solid #666;'>{{item.pulse}}</div>
+                        <div style='height:35px;line-height: 34px;'>{{item.pulse ? item.pulse - 10 : ''}}</div>
+                      </td>
+                      <td :colspan='3*ten' rowspan='10' class='border-n red' :valign="i != 11 ?'bottom':'center'" style='padding: 0;margin: 0;'>{{item.temperature ? item.temperature : item.pulse == 20 ? 'VAS评分' : ''}}</td>
+                      <td v-for='(item2,index) of td42null'  height='6px' :colspan='ten' :class='{"red":index % 6 == 5}'></td>
+                    </tr>
+                    <tr v-for='(td,s) of td9null' >
+                      <td v-for='(item2,index) of td42null'  height='6px' :colspan='ten' :class='{"red":index % 6 == 5,"bottom": i == 5 && s == 8 }'></td>
+                    </tr>
+                  </template>
+
+                <breathing  v-for='(item,index) of signs' v-if='item.SIGN_CODE == "T10400"' :sign='item' :key='item.CODE'></breathing>
+                <template v-for='(item,index) of signs'>
+                  <tr v-if='item.SIGN_CODE == "T10600"'>
+                    <td :colspan='6*ten' height='20px' style='max-width: 83px;overflow: hidden;'>{{ item.NAME }}</td>
+                    <td :colspan='3*ten' height='20px' v-for='(one,i) of item.items' v-if='i<14'>{{one.VS_VALUE}}</td>
+                  </tr>
+                  <tr v-if='item.items.length > 14 && item.SIGN_CODE == "T10600"'>
+                    <td :colspan='6*ten' height='20px'></td>
+                    <td :colspan='3*ten' height='20px' v-for='(one,i) of item.items' v-if='i<28 && i>=14'>{{one.VS_VALUE}}</td>
+                  </tr>
+                  <tr v-if='item.items.length > 28 && item.SIGN_CODE == "T10600"'>
+                    <td :colspan='6*ten' height='20px'></td>
+                    <td :colspan='3*ten' height='20px' v-for='(one,i) of item.items' v-if='i<42 && i>=28'>{{one.VS_VALUE}}</td>
+                  </tr>
+                </template>
+                <template v-for='(item,index) of signs'>
+                  <tableTr :sign='item' :key='index' v-if='item.SIGN_CODE != "T10600" && item.SIGN_CODE != "T10100" && item.SIGN_CODE != "T10200" && item.SIGN_CODE != "T10300" && item.SIGN_CODE != "T10500" && item.SIGN_CODE != "P10100"'></tableTr>
+                </template>
+                  <tr>
+                    <td height='20px' :colspan='6*ten' >疼痛评估方法</td>
+                    <td height='20px' :colspan='30*ten' style='border-right:1px solid #fff'>
+                      <p style='text-align: left;text-indent: 1em;'>
+                        <span>VDS</span><span style='font-size: 20px'>□&nbsp;&nbsp;&nbsp;&nbsp;</span>
+                        <span>NRS</span><span style='font-size: 20px'>□&nbsp;&nbsp;&nbsp;&nbsp;</span>
+                        <span>CPOT</span><span style='font-size: 20px'>□&nbsp;&nbsp;&nbsp;&nbsp;</span>
+                        <span>VAS</span><span style='font-size: 20px'>□&nbsp;&nbsp;&nbsp;&nbsp;</span>
+                        <span>FLACC</span><span style='font-size: 20px'>□&nbsp;&nbsp;&nbsp;&nbsp;</span>
+                      </p>
+                    </td>
+                    <td height='20px' :colspan='12*ten'></td>
+                  </tr>
+                  <tr>
+                    <td height='20px' :colspan='6*ten'>疼痛的性质</td>
+                    <td height='20px' :colspan='30*ten' style='border-right:1px solid #fff;'>
+                      <p style='text-align: left;text-indent: 1em;'>
+                        <span style='font-size: 12px;'>刀割样（刺痛）</span><span style='font-size: 12px;'>△&nbsp;&nbsp;</span>
+                        <span style='font-size: 12px;'>绞痛</span><span style='font-size: 12px;'>×&nbsp;&nbsp;</span>
+                        <span style='font-size: 12px;'>抽搐痛</span><span style='font-size: 12px'>⊙&nbsp;&nbsp;</span>
+                        <span style='font-size: 12px;'>烧灼痛</span><span style='font-size: 12px'>▼&nbsp;&nbsp;</span>
+                        <span style='font-size: 12px;'>钝痛</span><span style='font-size: 12px;'>○&nbsp;&nbsp;</span>
+                        <span style='font-size: 12px;'>胀痛</span><span style='font-size: 12px;'>◎&nbsp;&nbsp;</span>
+                        <span style='font-size: 12px;'>麻痛</span><span style='font-size: 12px'>※&nbsp;&nbsp;</span>
+                      </p>
+                    </td>
+                    <td height='20px' :colspan='12*ten'></td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <broken-line4 v-for='(item,index) of signs' :sign='item' v-if='item.SIGN_CODE == "T10500" && signs[0]' :key='index'></broken-line4>
+              <broken-line3 v-for='(item,index) of signs' :sign='item' v-if='item.SIGN_CODE == "T10300" && signs[0]' :key='index'></broken-line3>
+
+              <broken-line v-for='(item,index) of signs' :sign='item'  v-if='item.SIGN_CODE == "T10100" && signs[0]' :key='index'></broken-line>
+              <broken-line2 v-for='(item,index) of signs' :sign='item' v-if='item.SIGN_CODE == "T10200" && signs[0]' :key='index'></broken-line2>
+              <broken-line5 v-for='(item,index) of signs' :sign='item' v-if='item.SIGN_CODE == "P10100" && signs[0]' :key='index'></broken-line5>
+              <broken-line6 :events='events' :dateFormatArr='dateFormatArr' ref='line6'></broken-line6>
+
+              <!--<p style='text-indent: 2em;margin-top: 10px;'>-->
+                <!--备注：-->
+                <!--<span style='color:blue'>▲</span>耳温&nbsp&nbsp-->
+                <!--<span style='color:blue'>x</span>腋温&nbsp&nbsp-->
+                <!--<span style='color:blue;font-size: 20px'>○</span>肛温&nbsp&nbsp-->
+                <!--<span style='color:blue;font-size: 20px'>●</span>口温&nbsp&nbsp-->
+                <!--<span style='color:red;font-size: 20px'>○</span>降温&nbsp&nbsp-->
+                <!--<span style='color:red;font-size: 20px'>●</span>脉搏&nbsp&nbsp-->
+                <!--☆人工肛门、分别表示，连线不变-->
+              <!--</p>-->
+              <div style='text-align: center;font-size: 14px;margin-top: 10px;'>第{{date+1}}页</div>
+            </div>
+          </div>
+
+        </foreignObject>
+      </svg>
+      <event-entry ref='eventEntry' :detile='detile'></event-entry>
+      <signEntry ref='signEntry' :detile='detile' :id='id' :re_code='re_code'></signEntry>
+      <div id='can'></div>
+    </div>
+</template>
+
+<script>
+
+
+  import signEntry from './signEntry'
+  import tableTr from './tableTr'
+  import breathing from './breathing'//呼吸
+  import brokenLine from './brokenLine/brokenLine'//体温
+  import brokenLine2 from './brokenLine/brokenLine2'//降温
+  import brokenLine3 from './brokenLine/brokenLine3'//脉搏
+  import brokenLine4 from './brokenLine/brokenLine4'//心率
+  import brokenLine5 from './brokenLine/brokenLine5'//疼痛评分
+  import BrokenLine6 from "./brokenLine/brokenLine6"
+  import EventEntry from "@/pages/workstation/PatientDOC/component/thermometer/eventEntry/eventEntry";
+  //患者事件
+  //疼痛评分
+
+  //心率
+    export default {
+        name: "thermometer",
+
+        components : {EventEntry, signEntry , tableTr ,brokenLine, brokenLine2, brokenLine3, brokenLine4, brokenLine5, BrokenLine6, breathing },//
+
+        props : ['detile','id','title'],
+
+        data (){
+          return{
+            scale:'',
+            date : '',
+            options : [],
+            signs : [],
+            maxValue : 0,
+            re_code:'',
+            IN_HOSPITAL_DATE : '',
+            td42null : ['','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','',''],
+            td28null : ['','','','','','','','','','','','','','','','','','','','','','','','','','','',''],
+            td9null : ['','','','','','','','',''],
+            td5null : ['','','','',''],
+            td14null : ['','','','','','','','','','','','','',''],
+            td7null : ['','','','','','',''],
+            ten : 30,
+            HOSPITAL : '',
+            dateFormatArr : [],
+
+            pulseTemperature : [
+              { pulse : '' , temperature : '42℃'},
+              { pulse : '' , temperature : '41℃'},
+              { pulse : '' , temperature : '40℃'},
+              { pulse : 180 , temperature : '39℃'},
+              { pulse : 160 , temperature : '38℃'},
+              { pulse : 140 , temperature : '37℃'},
+              { pulse : 120 , temperature : '36℃'},
+              { pulse : 100 , temperature : '35℃'},
+              { pulse : 80 , temperature : ''},
+              { pulse : 60 , temperature : ''},
+              { pulse : 40 , temperature : ''},
+              { pulse : 20 , temperature : ''},
+            ],
+            inHospitalDays:[],
+
+            HOSPITALIZED_DATE:'',
+            events:'',
+            ss_events:['','','','','','',''],
+            depaBedInfo:[],
+            today:''
+          }
+        },
+
+        created(){
+          this.$nextTick(() => {
+            let arr = []
+            let in_areg_date = new Date(this.detile.HOSPITALIZED_DATE).getTime()
+            // let in_areg_week = new Date(in_areg_date - 86400000 * ( 0 + (new Date(in_areg_date).getDay() + 6) % 7)).getTime() //入院周的周一
+            let in_areg_week = in_areg_date //入院周的周一
+            var today_date
+            if(this.detile.LEAVE_HOSPITAL_DATE){
+              today_date = Math.floor(new Date(this.detile.LEAVE_HOSPITAL_DATE).getTime()/86400000)
+            }else{
+              today_date = Math.floor(new Date().getTime()/86400000)
+            }
+            this.today = this.detile.LEAVE_HOSPITAL_DATE ? new Date(this.detile.LEAVE_HOSPITAL_DATE).getTime() : new Date().getTime()
+            //let today_date =  ? this.detile.LEAVE_HOSPITAL_DATE : Math.floor(new Date().getTime()/86400000)
+            let D_value = today_date - Math.floor(in_areg_week/86400000)
+            console.log(today_date,D_value)
+            let for_len = Math.ceil( Math.floor(D_value + 1) / 7 ) - 1
+            for(let i = for_len; i >= 0 ; i--){
+              let timeStamp = in_areg_week + 604800000 * i
+              let timeStamp_end = in_areg_week + 604800000 * (i+1) - 86400000
+              let y = new Date(timeStamp).getFullYear()
+              let m = new Date(timeStamp).getMonth() + 1 > 9 ? new Date(timeStamp).getMonth() + 1 : '0' + (new Date(timeStamp).getMonth() + 1)
+              let d = new Date(timeStamp).getDate() > 9 ? new Date(timeStamp).getDate() : '0' + new Date(timeStamp).getDate()
+              let y_end = new Date(timeStamp_end).getFullYear()
+              let m_end = new Date(timeStamp_end).getMonth() + 1 > 9 ? new Date(timeStamp_end).getMonth() + 1 : '0' + (new Date(timeStamp_end).getMonth() + 1)
+              let d_end = new Date(timeStamp_end).getDate() > 9 ? new Date(timeStamp_end).getDate() : '0' + new Date(timeStamp_end).getDate()
+              let str = y + '-' + m + '-' + d
+              let str_end = y_end + '-' + m_end + '-' + d_end
+              arr.push({ label : str , value : i, date_end: str_end })
+            }
+            this.options = arr
+
+            this.maxValue = for_len
+            this.date = for_len
+
+            this.getData()
+          })
+        },
+
+        methods : {
+          signEntry(){
+            this.$refs.signEntry.popshow = true
+            this.$refs.signEntry.getData()
+          },
+          eventEntry(){
+            this.$refs.eventEntry.show()
+          },
+          getData(){
+            this.signs = []
+            this.getSer('datacenter/twtemplateuser',{ tpl : this.id, inpatient_number : this.detile.INPATIENT_NUMBER , startDate : this.options[this.maxValue - this.date].label ,endDate : this.options[this.maxValue - this.date].date_end }, res => {
+              console.log('折线图',res)
+              this.HOSPITAL = res.data.HOSPITAL
+              this.HOSPITALIZED_DATE = res.data.HOSPITALIZED_DATE
+              this.re_code = res.data.RE_CODE
+              let arr = []
+              res.data.TEMPLATE_DATA.forEach(sign=>{
+                for(var k in sign.items){
+                  sign.items[k] = Object.values(sign.items[k])
+                  sign.items[k].forEach((item,index)=>{
+                    sign.items[k][index] = Object.values(item)
+                  })
+                }
+              })
+              res.data.TEMPLATE_DATA.forEach(item=>{ //血压
+                if(item.SIGN_CODE == "T10600"){
+                  item.items.forEach(pc=>{
+                    for(var k in pc){
+                      if(pc[k][1].VS_VALUE && pc[k][1].VS_VALUE ){
+                        pc[k][0].VS_VALUE = pc[k][1].VS_VALUE + '/' + pc[k][2].VS_VALUE
+                      }{
+
+                      }
+                      k < 2 ? arr.push(pc[k][0]) : null
+                    }
+                  })
+                  item.items.forEach(pc=>{
+                    for(var k in pc){ k > 1 ? arr.push(pc[k][0]) : null }
+                  })
+                  item.items = arr
+                }
+              })
+              this.events = [...res.data.LABLE_OTHER , ...res.data.LABLE_SS]
+              this.depaBedInfo= res.data.DEPA_BED_INFO
+              this.ss_events = res.data.LABLE_SS
+              if(res.data.LABLE_SS.length == 0){
+                this.ss_events = ['','','','','','','']
+              }
+              this.signs = res.data.TEMPLATE_DATA
+              this.dateFormat()
+              this.computed_inHospitalDays()
+              this.position_inspitalDays()
+
+              this.$refs.line6.setData()
+            })
+          },
+          dateFormat(){
+            this.dateFormatArr = []
+
+            this.dateFormatArr.push( this.options[this.maxValue - this.date].label )
+            let date = new Date(this.options[this.maxValue - this.date].label).getTime()
+            for(var i=1;i<7;i++){
+              this.dateFormatArr.push(new Date(date+(i*86400000)).getDate() != 1 ? new Date(date+(i*86400000)).getDate() : (new Date(date+(i*86400000)).getMonth() + 1) +'-'+ new Date(date+(i*86400000)).getDate())
+            }
+          },
+          position_inspitalDays(){
+            if(this.date != 0){
+              return
+            }else{
+              let IN_HOSPITAL_DATE = new Date(this.detile.HOSPITALIZED_DATE.split(' ')[0]).getTime()
+              let time = this.detile.HOSPITALIZED_DATE.split(' ')[1].substring(0,2)
+              var oneDay = new Date(this.options[this.maxValue - this.date].label).getTime()
+              var num = (oneDay - IN_HOSPITAL_DATE) / 86400000
+
+              for(var i =0;i<7;i++){
+                if(IN_HOSPITAL_DATE > oneDay){
+                  oneDay += 86400000
+                  num++
+                }else{
+                  num++
+                  if(num == 1){
+                    console.log("time",(time-2)/4)
+                    return
+                  }
+                }
+              }
+            }
+          },
+          computed_inHospitalDays(){
+            this.inHospitalDays=[]
+            let IN_HOSPITAL_DATE = new Date(this.detile.HOSPITALIZED_DATE.split(' ')[0]).getTime()
+            var oneDay = new Date(this.options[this.maxValue - this.date].label).getTime()
+            var num = (oneDay - IN_HOSPITAL_DATE) / 86400000
+            for(var i =0;i<7;i++){
+              if(IN_HOSPITAL_DATE > oneDay || oneDay > this.today){
+                this.inHospitalDays.push('')
+                num++
+              }else {
+                num++
+                this.inHospitalDays.push(num)
+              }
+              oneDay += 86400000
+              console.log(i, '-'+oneDay)
+              console.log(i, '-'+this.today)
+            }
+
+
+          },
+          print(){
+            //体温单打印
+            var LODOP = this.$getLodop()
+            var strBodyStyle="<style>table{border-collapse:collapse;} h2{font-size: 50px;margin: 0;font-family: Simsun,Georgia; height: 20px;} p{font-family: Simsun,Georgia;height: 20px; font-size: 14px;} .line2{position: absolute;left:90px;top:885px;} .line{position:absolute;left:90px;top:86px;} th{ font-family: Simsun,Georgia; font-weight: normal;font-size: 14px;}  td{ text-align: center; font-size:14px;min-width:9px;min-height: 7px; font-family: Simsun,Georgia} twd_event{display: none;} .top{top:-8px;!important;position:relative;} .pp span{position: relative;top:5px;} .line3{position: absolute;left: 90px; top:82px;} .red{border-right:2px solid red;} .bottom{border-bottom:2px solid red;}</style>";
+            var strBodyHtml = strBodyStyle+"<body>"+this.$refs.print.innerHTML+"</body>";
+
+
+            LODOP.PRINT_INIT("")
+            LODOP.SET_PRINT_PAGESIZE(1,"","","a4")
+            LODOP.SET_PRINT_MODE("PRINT_PAGE_PERCENT","Full-Page")
+            LODOP.ADD_PRINT_HTML(0,20,'100%','100%',strBodyHtml)//xx ←边距 xx height
+            LODOP.SET_SHOW_MODE("LANDSCAPE_DEFROTATED",1)
+            LODOP.PREVIEW()
+            // LODOP.PRINT_DESIGN()
+          },
+        },
+      
+        watch : {
+          'date' : function (to) {
+            to > this.maxValue ? this.date = this.maxValue : null
+            to < 0 ? this.date = 0 : null
+            this.getData()
+
+          },
+          'id' : function () {
+            this.getData()
+          }
+        }
+    }
+</script>
+
+<style scoped lang='stylus'>
+  .setting
+    margin-bottom 20px
+    .entry
+      background-color #DDEFF9
+      border none
+      color #00B3DC
+      padding 10px 20px
+    .left,.right
+      padding 10px 10px
+    .date
+      width 150px;
+      & >>> .el-input__inner
+        height 36px
+        line-height 36px
+      & >>>.el-input__suffix
+        top 2px
+  table
+    border-collapse collapse
+    .border-r
+      border-right 1px solid #999
+      div
+        font-size 12px
+    .border-n
+    th
+      font-weight normal
+    td
+      font-size 12px
+      text-align center
+      line-height 1
+      white-space nowrap
+    .red
+      border-right 2px solid red
+    .bottom
+      border-bottom 2px solid red
+  p
+    font-size 12px
+  .line
+    position absolute
+    left 93px
+    top 105px
+  .twd_event
+    position absolute
+    top 80px
+    font-size 12px
+    width 20px
+    color red
+    line-height 15px
+  .twd_event_print
+    display none
+</style>

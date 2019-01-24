@@ -1,0 +1,43 @@
+<template>
+    <el-dialog :visible.sync="viewdialogFormVisible">
+        <el-tabs type="card" v-model='activeName'>
+          <el-tab-pane label="文书预览" name="first">
+            <listPreviewDoc :NODES='NODES'></listPreviewDoc>
+          </el-tab-pane>
+          <el-tab-pane label="PDA文书预览" name="second">配置管理</el-tab-pane>
+        </el-tabs>
+    </el-dialog>
+</template>
+
+<script>
+  import listPreviewDoc from './listPreviewDoc'
+  import listPreviewPDA from './listPreviewPDA'
+    export default {
+        name: "listPreview",
+
+        data(){
+          return{
+            viewdialogFormVisible : false,
+            NODES : [],
+            activeName : 'first'
+          }
+        },
+
+        methods:{
+          getData(id){
+
+            this.getSer("datacenter/template/"+id , { id },res => {
+              console.log(res)
+              this.viewdialogFormVisible = true
+              this.NODES = res.data.NODES
+            })
+          }
+        },
+
+        components:{listPreviewDoc,listPreviewPDA}
+    }
+</script>
+
+<style scoped lang='stylus'>
+
+</style>

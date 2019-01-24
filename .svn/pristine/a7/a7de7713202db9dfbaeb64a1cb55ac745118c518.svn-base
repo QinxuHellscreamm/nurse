@@ -1,0 +1,280 @@
+<template>
+
+      <div class="pro-ri">
+        <div  class="pro-ritop">
+          <p style="line-height: 50px;padding-left: 20px;">医嘱执行清单 <span style="color: #E63922;padding-left: 10px;">蓝色：待执行，绿色：婴儿待执行医嘱，黑色：长期当天已执行，红色：临时已执行 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;已停止已作废医嘱默认不勾选</span></p>
+          <el-table
+            ref="multipleTable"
+            :data="medicaladvice_list"
+            :span-method="arraySpanMethod"
+            :cell-style="cellStyle"
+            tooltip-effect="dark"
+            @row-contextmenu='rightClick'
+            style="width: 100%"
+            @selection-change="handleSelectionChange">
+            <!--成组的情况-->
+            <el-table-column label="" width="20">
+              <!--<template slot-scope="scope">-->
+                <!--<span :class="scope.row.IS_GROUP==1?'pairGod':''"></span>-->
+              <!--</template>-->
+            </el-table-column>
+            <el-table-column type="selection" width="38"></el-table-column>
+            <el-table-column prop="PROJECT_NAME" label="医嘱内容" width="180"></el-table-column>
+            <el-table-column prop="LIST_EXECUTE_NUMBER" label="总次数" width="100"></el-table-column>
+            <el-table-column prop="LIST_CURRENT_NUMBER" label="已执行次数" width="100"></el-table-column>
+            <el-table-column  label="开始时间" width="150">
+                <template slot-scope="{row}">
+                    <span>{{ row.START_TIME | stampTotime }}</span>
+                  </template>
+            </el-table-column>
+            <el-table-column prop="EXEC_DATE" label="执行时间" width="150">
+                <!--<template slot-scope="{row}">
+                    <span>{{ row.EXEC_DATE | stampTotime }}</span>
+                  </template>-->
+            </el-table-column>
+            <el-table-column prop="TYPE_NAME" label="类型" width="100"></el-table-column>
+            <el-table-column prop="PATIENT_NAME" label="姓名" width="80"></el-table-column>
+            <el-table-column prop="LIST_EXECUTE_NUMBER" label="首日次数" width="100" show-overflow-tooltip></el-table-column>
+            <el-table-column prop="USAGE" label="用法" width="140" show-overflow-tooltip></el-table-column>
+            <el-table-column prop="CHANNEL" label="途径" width="100"></el-table-column>
+            <el-table-column prop="SINGLE_DOSE_SHOW" label="单次用量" width="120"></el-table-column>
+            <el-table-column prop="TOTAL_USAGE_SHOW" label="总用量" width="120"></el-table-column>
+            <el-table-column prop="ENTRUST" label="嘱托" width="220"></el-table-column>
+            <el-table-column prop="address" label="是否皮试" width="80">
+              <template slot-scope="scope">
+                {{scope.row.TYPE == "3" ? '√':''}}
+              </template>
+            </el-table-column>
+            <el-table-column prop="SKIN_TEST_RESULT" label="皮试结果" width="80"></el-table-column>
+            <el-table-column prop="STOP_TIME" label="停止时间" width="150"></el-table-column>
+            <el-table-column prop="STOP_USER" label="执行停止人" width="100"></el-table-column>
+            <!--<el-table-column prop="STOP_TIME" label="执行停止时间" width="150"></el-table-column>-->
+            <!--<el-table-column prop="address" label="医嘱停止者" width="100"></el-table-column>-->
+            <el-table-column prop="address" label="停止状态" width="100"></el-table-column>
+            <el-table-column prop="ADVICE_TIME" label="生成日期" width="100"></el-table-column>
+          </el-table>
+        </div>
+        <div class="fixed" ref='fix' v-show='fixShow' @mouseout='out' >
+          <div class='edit' @click='startSkin' v-if="obj.STATUS == 1 && obj.TYPE == 3" style="cursor: pointer;">开始皮试</div>
+          <!--<div class='edit'  v-else style="background: #e4e7ed">开始皮试2</div>-->
+          <div class='edit' @click='resultSkin' v-if="obj.STATUS == 2 && obj.TYPE == 3" style="cursor: pointer;">输入皮试结果</div>
+          <!--<div class='edit'  v-else style="background: #e4e7ed">输入皮试结果</div>-->
+       <!--   <div class='edit' @click='addPDD'>执行PPD试验</div>  v-if="obj.TYPE==1 && (obj.STATUS==1 || obj.STATUS==2)"
+          <div class='edit' @click='resultPDD' style="border-bottom:none;">输入PPD试验结果</div>-->
+          <!--<div @click='del'>删除</div>-->
+        </div>
+
+
+        <div>
+          <el-button type="primary" @click="execute"  size="small" style="float: right;margin: 20px;">医嘱执行</el-button>
+        </div>
+
+   <!--     <el-dialog :visible.sync="popshow" title='医嘱执行' width='600px'>
+          <div>
+            <p style="margin-bottom: 14px;">开始执行 皮试和输血需要另外的逻辑</p>
+            <div style="padding-top: 20px;text-align: right;">
+              <el-button @click="popshow = false">取 消</el-button>
+              <el-button type="primary" @click="execute">确 定</el-button>
+            </div>
+          </div>
+        </el-dialog>-->
+        <testPDD ref='child'></testPDD>
+        <testSkin ref='childSkin' :list_id="list_id"></testSkin>
+      </div>
+</template>
+<script>
+  import testPDD from './testPDD'
+  import testSkin from './testSkin'
+/*  import billingInfor from './billingInfor'*/
+    export default{
+      props : ['medicaladvice_list'],
+
+      components:{ testPDD , testSkin },
+
+      data(){
+          return {
+            /*billingData:[],*/
+            //popshow : false,
+            fixShow : false,
+            input:'',
+            check_list_id:[],
+            title : '',
+            obj : {},
+            list_id:'',
+            sameGroup:true,
+            groupNo:'',
+            old:[]
+          }
+      },
+
+      methods:{
+        rightClick(obj,e){
+          e.preventDefault()
+          console.log(obj)
+          if(obj.TYPE != 3) return
+          this.list_id = obj.LIST_ID
+          this.obj = obj
+          this.fixShow = true
+          this.$refs.fix.style.left = e.clientX - 40 + 'px'
+          this.$refs.fix.style.top = e.clientY - 30 + 'px'
+          this.fixShow = true
+        },
+
+        arraySpanMethod({row, column, rowIndex, columnIndex}) {
+          if (columnIndex === 0) {
+            if (row.INDEX) { // 如果有值,说明需要合并
+              return [row.INDEX, 1]
+            } else return [1, 0]
+          }
+        },
+
+        //在method里面写上方法
+        cellStyle({row, column, rowIndex, columnIndex}){
+          if (columnIndex === 0) {//指定坐标
+            if (row.INDEX) {
+              return 'background:pink'
+            } else {
+              return ''
+            }
+          }
+        },
+
+        out(e){
+          if(e.toElement.className == 'el-tabs__content' || e.toElement.className == 'cell' || e.toElement.lastChild.className == 'cell') this.fixShow = false
+        },
+        edit(){
+          this.popshow = true
+          this.fixShow = false
+        },
+        startSkin(){
+          this.$refs.childSkin.popshow = true
+          this.fixShow = false
+          this.$refs.childSkin.title = '执行皮试'
+          this.$refs.childSkin.dataTime()
+
+        },
+        resultSkin(){
+          this.$refs.childSkin.popshow = true
+          this.fixShow = false
+          this.$refs.childSkin.title = '皮试结果'
+          this.$refs.childSkin.nurses()
+        },
+        addPDD(){
+          this.$refs.child.popshow = true
+          this.fixShow = false
+          this.$refs.child.title = '执行PDD皮试'
+          //this.$refs.child.grtData()
+        },
+        resultPDD(){
+          this.$refs.child.popshow = true
+          this.fixShow = false
+          this.$refs.child.title = 'PDD试验结果'
+        },
+        computed_user_operation(old,no_old){ //计算 用户操作的是哪个list_id
+          let obj = new Object()
+          var list_id;
+          old.forEach(item=>{
+            obj[item.ID] ? obj[item.ID] ++ : obj[item.ID] = 1
+          })
+          no_old.forEach(item=>{
+            obj[item.ID] ? obj[item.ID] ++ : obj[item.ID] = 1
+          })
+
+          for (var k in obj){
+            if(obj[k] === 1) var getk =  k
+          }
+          this.medicaladvice_list.forEach(item=>{
+            if(item.ID == getk) {
+              list_id =  item.LIST_ID
+            }
+          })
+          return list_id
+        },
+        handleSelectionChange(val) {
+          console.log(this.old.length);
+          if(this.old.length > val.length){ //取消操作
+            let operation = this.computed_user_operation(this.old , val)
+            this.old = JSON.parse(JSON.stringify(val))
+            console.log(operation)
+            this.medicaladvice_list.forEach(items=>{
+              if (operation == items.LIST_ID){
+                this.$refs.multipleTable.toggleRowSelection(items,false);
+              }
+            })
+          }else{
+            let operation = this.computed_user_operation(this.old , val)
+            this.old = JSON.parse(JSON.stringify(val))
+            this.medicaladvice_list.forEach(items=>{
+              if (operation == items.LIST_ID){
+                this.$refs.multipleTable.toggleRowSelection(items,true);
+              }
+            })
+          }
+          this.check_list_id = val
+        },
+        execute(){
+          let arr = []
+          this.check_list_id.forEach(item=>{
+            arr.push(item.LIST_ID)
+          })
+          let obj = {
+            check_list_id : JSON.stringify(arr)
+          }
+          this.post("datacenter/medicaladvice/execute",obj,res=>{
+            if(res.status == 201) {
+              this.$message({message: '执行成功',type: 'success'})
+            }
+            else {
+              this.$message({message: res.data.message,type: 'warning'})
+            }
+          })
+        },
+      },
+
+    }
+</script>
+<style scoped lang='stylus'>
+  .pro-ri
+    flex 1
+    width calc(100% - 300px)
+    background #fff
+    border-left 1px solid #D8E3E7
+    box-sizing border-box
+    .pro-ritop
+      .el-table
+        &>>>.el-table__header-wrapper
+          th
+            .cell
+              font-weight 500
+              color #2B3A50
+    .el-table>>> td, .el-table>>> th.is-leaf
+      padding 5px 0
+  .botBtn
+    text-align right
+    padding 20px 20px
+  .pairGod
+    border 2px solid red
+    width 20px
+    height 100px
+    display inline-block
+    vertical-align middle
+    border-right none
+    background-color #fff
+  .fixed
+    position fixed
+    width 150px
+    height 30px
+    background-color #FFFFFF
+    border 1px solid #dddddd
+    z-index 2000
+    div
+      height 30px
+      line-height 30px
+      text-align center
+      &:hover
+        background-color #ddeff9
+    .edit
+      border-bottom 1px solid #dddddd
+      :last-child
+        border-bottom none
+</style>

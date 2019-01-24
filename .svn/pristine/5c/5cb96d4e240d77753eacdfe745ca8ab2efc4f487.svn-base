@@ -1,0 +1,251 @@
+<template>
+  <div :class= "{'title': this.nodeData.NODE_TYPE == 2 && this.nodeData.is_father}" style='float: left'>
+    <div v-if='nodeData.NODE_TYPE==2' class='titlename' >{{this.nodeData.NODE_NAME}}</div><!--标题-->
+    <div v-if='nodeData.INPUT_MODE == 0 && nodeData.NODE_TYPE!=8 && nodeData.NODE_TYPE!=2' class='node-item'>{{nodeData.NODE_NAME}}</div><!--无 文本类型-->
+    <div class='node-item item1' v-if='nodeData.INPUT_MODE == 1'><!--单行文本-->
+      <label class='marg5' v-if='nodeData.IS_SHOW==1'>
+        <span v-if='nodeData.IS_REQUIRED == 1 '>*</span>
+        {{nodeData.NODE_NAME}}
+      </label>
+      <el-input placeholder='请输入' v-model='nodeData.VALUE.content' v-if='nodeData.INPUT_TYPE == 2' :maxlength='nodeData.INPUT_LENGTH'></el-input><!--文本-->
+
+      <el-input placeholder='请输入' v-model='nodeData.VALUE.content' v-if='nodeData.INPUT_TYPE == 1' :maxlength='nodeData.INPUT_LENGTH' :min='nodeData.INPUT_RULES.min' :max='nodeData.INPUT_RULES.max'></el-input><!--数字-->
+
+      <el-time-picker v-if='nodeData.INPUT_TYPE == 3' v-model="nodeData.VALUE.content" placeholder="任意时间点"></el-time-picker>
+      <el-date-picker v-model="nodeData.VALUE.content" value-format='yyyy-MM-dd' type="date" placeholder="选择日期" v-if='nodeData.INPUT_TYPE == 4'></el-date-picker><!--日期-->
+      <el-date-picker v-model="nodeData.VALUE.content" value-format='yyyy-MM-dd	HH:mm' format='yyyy-MM-dd	HH:mm' type="datetime" v-if='nodeData.INPUT_TYPE == 5' placeholder="请选择" class='dateandtime'></el-date-picker>
+
+    </div>
+    <div class='node-item item2' v-if='nodeData.INPUT_MODE == 2'><!--多行文本-->
+      <label class='marg5'>
+        <span v-if='nodeData.IS_REQUIRED == 1 '>*</span>
+        {{nodeData.NODE_NAME}}
+        <br>
+      </label>
+      <el-input type="textarea" placeholder="请输入" :maxlength='nodeData.INPUT_LENGTH' v-model='nodeData.VALUE.content'></el-input>
+    </div>
+    <div class="node-item" v-if='nodeData.INPUT_MODE == 3'><!--单选-->
+      <label class='marg5'>
+        <span v-if='nodeData.IS_REQUIRED == 1 '>*</span>
+        {{nodeData.NODE_NAME}}
+      </label>
+      <el-radio-group v-model="nodeData.VALUE.option[0]" @change='computedScore'>
+        <el-radio v-for="(item,index) of radios" :label="index + 1 + ''" :key='index'>{{item.title}}</el-radio>
+      </el-radio-group>
+    </div>
+    <div class="node-item" v-if='nodeData.INPUT_MODE == 4'><!--多选-->
+      <label class='marg5'>
+        <span v-if='nodeData.IS_REQUIRED == 1 '>*</span>
+        {{nodeData.NODE_NAME}}
+      </label>
+      <el-checkbox-group v-model="nodeData.VALUE.option" @change='checkboxComputedScore'>
+        <el-checkbox v-for="(item,index) of radios" :label="index + 1 + ''" :key='index'>{{item.title}}</el-checkbox>
+      </el-checkbox-group>
+    </div>
+    <div class="node-item" v-if='nodeData.INPUT_MODE == 5'><!--下拉选择-->
+      <label class='marg5'>
+        <span v-if='nodeData.IS_REQUIRED == 1 '>*</span>
+        {{nodeData.NODE_NAME}}
+      </label>
+      <el-select v-model="nodeData.VALUE.option[0]" placeholder="请选择" @change='computedScore'>
+        <el-option v-for="(item,index) in radios" :key="item.title" :label="item.title" :value="index + 1 + ''">
+          <span style="float: left">{{ item.title }}</span>
+          <!--<span style="float: right; color: #8492a6; font-size: 13px">{{ nodeData.NODE_UNIT }}</span>-->
+        </el-option>
+      </el-select>
+    </div>
+    <div class="node-item" v-if='this.nodeData.INPUT_MODE == 6'><!--可选可输-->
+      <label class='marg5'>
+        <span v-if='nodeData.IS_REQUIRED == 1 '>*</span>
+        {{nodeData.NODE_NAME}}
+      </label>
+      <el-autocomplete
+        class="inline-input"
+        v-model="nodeData.VALUE.content"
+        :fetch-suggestions="querySearch"
+        placeholder="请输入内容"
+        @select="handleSelect"
+      ></el-autocomplete>
+    </div>
+    <div class="node-item" v-if='this.nodeData.INPUT_MODE == 7'>
+      <label class='marg5'>
+        <span v-if='nodeData.IS_REQUIRED == 1 '>*</span>
+        {{ nodeData.NODE_NAME }}
+      </label>
+      <el-radio-group v-model="nodeData.VALUE.option[0]">
+        <el-radio v-for="(item,index) of radios" :label="index + 1 + ''" :key='index'>{{item.title}}</el-radio>
+      </el-radio-group>
+      <el-input v-model='nodeData.VALUE.content'></el-input>
+    </div>
+    <div class="node-item item1" v-if='this.nodeData.NODE_TYPE == 6' ><!--评估单模板-->
+      <label class='marg5'>
+        <span v-if='nodeData.IS_REQUIRED == 1'>*</span>
+        {{ nodeData.NODE_NAME }}
+      </label>
+      <i style='display: inline-block' @click='clickShow'>
+        <el-input v-model='nodeData.VALUE.score' readonly v-if='nodeData.VALUE.score'></el-input>
+        <el-input placeholder='点击弹出' value='' readonly v-if='!nodeData.VALUE.score'></el-input>
+      </i>
+    </div>
+    <div class="node-item item1" v-if='this.nodeData.NODE_TYPE == 6'>
+      <alertNode ref='alertNode' :importTemplateId='nodeData.RELATE_TEMPLATE_ID' :form_id='nodeData.RELATE_TEMPLATE_ANSWER' :inpatient_number='inpatient_number'></alertNode>
+    </div>
+
+    <div v-if='rander' style='overflow: hidden'>
+      <patientNode v-for='(child,index) of nodeData.CHILDS' :nodeData='child' :key=index :class='{"br":child.IS_NEWLINE == "1"}' :inpatient_number='inpatient_number'></patientNode>
+    </div>
+
+  </div>
+
+</template>
+
+<script>
+  import { _YMDhms } from "@/global"
+  import patientNode from './patientNode'
+  import alertNode from './alertNode'
+  export default {
+    data(){
+      return{
+        
+        rander : false,
+        INPUT_MODE : '',
+        maxlength : '',
+        radio : '',
+        radios : [],
+        unit : '',
+        restaurants : [],
+        state1 : '',
+      }
+    },
+
+    name: 'patientNode',
+
+    components : { patientNode , alertNode},
+
+    props : ['nodeData','inpatient_number'],
+
+    methods : {
+      querySearch(queryString, cb) {
+        var restaurants = this.restaurants;
+        var results = queryString ? restaurants.filter(this.createFilter(queryString)) : restaurants
+        // 调用 callback 返回建议列表的数据
+        cb(results)
+      },
+      createFilter(queryString) {
+        return (restaurant) => {
+          return (restaurant.value.toLowerCase().indexOf(queryString.toLowerCase()) === 0)
+        }
+      },
+      handleSelect(item) {
+        console.log(item);
+      },
+      computedScore(value){
+        console.log(value)
+        this.nodeData.VALUE.score = this.radios[value-1].label - 0
+      },
+      clickShow(){
+        this.$refs.alertNode.popshow = true
+      },
+      checkboxComputedScore(arr){
+        let score = 0
+        this.nodeData.VALUE.option.forEach(item=>{
+          this.radios.forEach((radio,index)=>{
+            item == (index-1) ? score += Number(radio.label) : null
+          })
+        })
+        this.nodeData.VALUE.score = score
+      }
+    },
+
+    created(){
+      this.$nextTick(()=>{
+        if(this.nodeData.CHILDS)  this.rander = true
+
+        this.unit = this.nodeData.NODE_UNIT ? this.nodeData.NODE_UNIT : ''
+        if(this.nodeData.OPTIONS){
+          console.log(this.nodeData);
+          // this.nodeData.VALUE.option.length = 0 ? this.nodeData.VALUE.option = ['']:null
+          var arr = this.nodeData.OPTIONS.split('\n')
+          console.log('arr')
+          console.log(arr)
+          arr.forEach( item => {
+            this.radios.push({ title : item.split('|')[0] + this.unit , label : item.split('|')[1] })
+            //可填可下拉
+            this.restaurants.push({"value":item.split('|')[0]})
+          })
+        }
+
+        setTimeout(()=>{
+          if(this.nodeData.INPUT_TYPE == '4'||this.nodeData.INPUT_TYPE == '5'){
+            if(this.nodeData.VALUE.content == null || this.nodeData.VALUE.content == ''){
+              this.nodeData.VALUE.content = _YMDhms()
+              console.log(this.nodeData.VALUE.content);
+            }
+          }
+        })
+      })
+    }
+  }
+</script>
+
+<style scoped lang="stylus">
+  .node-item
+    display block
+    line-height 30px
+    margin-right 10px
+    padding 5px 0
+    float left
+    .marg5
+      margin-right 5px
+      float left
+
+    label
+      color #2B3A50
+    .el-input,.el-autocomplete,.el-select
+      width 140px
+      height 30px
+      &>>> .el-input__inner
+        width 140px
+        line-height 30px
+        height 30px
+        background-color #F9F9FB
+        border 1px solid #D8E3E7
+      &>>>.el-input__prefix
+        top -5px
+    .dateandtime
+        width 200px
+        &>>> .el-input__inner
+          width 200px
+    &::-webkit-outer-spin-button,&::-webkit-inner-spin-button
+      -webkit-appearance none
+    &[type="number"]
+      -moz-appearance textfield
+  .item2
+    .marg5
+      width 100%
+    .el-textarea
+      width 800px
+      &>>>.el-textarea__inner
+        width 800px
+        height 100px
+        resize none
+        background-color #F9F9FB
+  .br
+    width 100%
+  .title
+    line-height 30px
+    width 100%
+    border-bottom 1px dashed #ddd
+    border-top 1px dashed #ddd
+    padding  5px 0
+    .titlename
+      font-weight bold
+      color #2B3A50
+  .el-radio-group
+    .el-radio
+      margin-right 30px
+      margin-left 0
+      line-height 30px
+  .el-checkbox-group
+    float left
+</style>

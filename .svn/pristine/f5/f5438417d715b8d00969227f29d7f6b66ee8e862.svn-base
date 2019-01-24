@@ -1,0 +1,63 @@
+<template>
+  <div>
+    <mainTab :vitalList="vitalList1" :tempss="tempss" :page="page" :dynamicName="dynamicName" :dynamic="dynamic"></mainTab>
+  </div>
+</template>
+<script>
+  import mainTab from '../../component/mainTab.vue'
+  export default{
+
+    components : { mainTab },
+
+    data(){
+        return {
+          vitalList1 : ["事件列表" ],
+          tempss : ['eventList' ],
+          page : 'adverseEvent/manage',
+          dynamic : [],
+          dynamicName  : [],
+          dleId:'',
+        }
+    },
+
+    methods:{
+      toggle(){
+        this.dynamic.splice(0, 1)
+        this.dynamicName.splice(0, 1)
+        window.sessionStorage.AddTPLAdmin = JSON.stringify({ dynamic : this.dynamic , dynamicName : this.dynamicName })
+        this.$nextTick(() => {
+          if(this.dynamic.length!=0){
+          this.$router.go(-1)
+        }else{
+          this.$router.push('/managePlatform/adverseEvent/manage/eventList')
+        }
+      })
+      },
+      addDynamic(id,name){
+        this.dynamic.splice(0,1,'report/'+id)
+        this.dynamicName.splice(0,1,name+'事件审核')
+        sessionStorage.AddTPLAdmin = JSON.stringify({ dynamic : this.dynamic , dynamicName : this.dynamicName })
+        this.$router.push('/managePlatform/adverseEvent/manage/report/'+id)
+        this.dleId=id
+      },
+      addDynamicShow(id,name){
+          this.dynamic.splice(0,1,'viewReport/'+id)
+          this.dynamicName.splice(0,1,name+'事件详情')
+          sessionStorage.AddTPLAdmin = JSON.stringify({ dynamic : this.dynamic , dynamicName : this.dynamicName })
+          this.$router.push('/managePlatform/adverseEvent/manage/viewReport/'+id)
+          this.dleId=id
+      },
+    },
+    mounted(){
+        this.$nextTick(()=>{
+            var AddTPLAdmin = JSON.parse(sessionStorage.AddTPLAdmin)
+            this.dynamic = [...this.dynamic,...AddTPLAdmin.dynamic]
+            this.dynamicName = [...this.dynamicName,...AddTPLAdmin.dynamicName]
+        })
+    }
+
+  }
+</script>
+<style scoped>
+
+</style>

@@ -1,0 +1,184 @@
+<template>
+    <div class='temperature'>
+      <div class='input-menu'>
+        <el-date-picker v-model="date" type="date" value-format="yyyy-MM-dd" format="yyyy-MM-dd" placeholder="选择日期"></el-date-picker>
+        <el-time-select v-model="time" :picker-options="{start: '02:00',step: '4:00',end: '22:00'}" placeholder="选择时间" class='mar5'></el-time-select>
+        <el-button type='primary' @click='$refs.alert.popshow = true' class='filter'>筛选</el-button>
+        <el-button type='primary' @click='save'>保存</el-button>
+      </div>
+      <div class="out-main">
+        <el-table :data='tableList'>
+          <el-table-column label="床号" prop="BED_NUMBER" width='100'></el-table-column>
+          <el-table-column label="姓名" prop="NAME" width='100'></el-table-column>
+          <el-table-column :label="parent_template.NAME" v-for='(parent_template,parent_index) of template' :key='parent_template.CODE'>
+            <template slot-scope="scope">
+              <div>
+                <span v-for='(sub,subindex) in parent_template.SUB_CODE' :key='sub.CODE'>
+                  <el-select v-model='scope.row.ITEMS[parent_index][subindex+1].VS_VALUE' placeholder='' v-if='sub.INPUT_TYPE_CODE == "03"'>
+                      <el-option v-for='itemO of sub.OPTION_LIST' :key="itemO.code" :label="itemO.name" :value="itemO.code"></el-option>
+                  </el-select>
+                  <el-input v-model='scope.row.ITEMS[parent_index][subindex+1].VS_VALUE' v-if='sub.INPUT_TYPE_CODE == "01" || sub.INPUT_TYPE_CODE == "02"' @change='type_update(scope.row.ITEMS[parent_index][subindex+1],sub.VALIDATION_RULE,scope.row.INPATIENT_NUMBER)' :maxlength='Number(sub.INPUT_LENGTH)'></el-input>
+                </span>
+                <span>
+                  <el-input v-model='scope.row.ITEMS[parent_index][0].VS_VALUE' v-if='parent_template.INPUT_TYPE_CODE == "01" || parent_template.INPUT_TYPE_CODE == "02"' :maxlength='Number(parent_template.INPUT_LENGTH)' @change='type_update(scope.row.ITEMS[parent_index][0],parent_template.VALIDATION_RULE,scope.row.INPATIENT_NUMBER)' :class="{'err':scope.row.ITEMS[parent_index][0].err}"></el-input>
+                  <el-autocomplete v-if='parent_template.INPUT_TYPE_CODE == "04"' v-model="scope.row.ITEMS[parent_index][0].VS_VALUE" :fetch-suggestions="querySearch_input" placeholder="" @focus='focus(parent_template)' :maxlength='Number(parent_template.INPUT_LENGTH)' @select="type_update(scope.row.ITEMS[parent_index][0],parent_template.VALIDATION_RULE,scope.row.INPATIENT_NUMBER)" @blur='type_update(scope.row.ITEMS[parent_index][0],parent_template.VALIDATION_RULE,scope.row.INPATIENT_NUMBER)' :class="{'err':scope.row.ITEMS[parent_index][0].err}"></el-autocomplete>
+                </span>
+              </div>
+            </template>
+          </el-table-column>
+        </el-table>
+      </div>
+      <patientScreen ref='alert'></patientScreen>
+      <sign-build-record ref='alertDialog'></sign-build-record>
+    </div>
+</template>
+
+<script>
+  import { _debounce } from "@/global"
+  import patientScreen from './patientScreen'
+  import signBuildRecord from '@/pages/workstation/component/signBuildRecord'
+    export default {
+        name: "temperature",
+
+        props : ['tpl'],
+
+        components : { patientScreen , signBuildRecord },
+
+        data(){
+          return {
+            date : '',
+            time : '',
+            row : {},
+            inpatient_number : [],
+            tableList : [],
+            template : []
+          }
+        },
+
+        created(){
+          this.$nextTick(() => {
+            let date = new Date()
+            let year = date.getFullYear()
+            let month = date.getMonth() + 1
+            let strDate = date.getDate()
+            if (month >= 1 && month <= 9) month = "0" + month
+            if (strDate >= 0 && strDate <= 9) strDate = "0" + strDate
+            let today =  year + '-' + month + '-' + strDate
+            let hour =  date.getHours()
+            let ai = parseInt(hour/4)
+            let aiHour = ai<2 ? '0'+ai*4+2+':00' : ai*4+2+  ':00'
+            this.time = aiHour
+            this.date = today
+          })
+
+        },
+
+        methods : {
+          getData(){
+            var obj = {  date : this.date, tpl : this.tpl, inpatient_number : JSON.stringify(this.inpatient_number), key :  this.time }
+            this.getSer('datacenter/vs-batch',obj,res=>{
+              res.data.data.forEach(people=>{
+                people.ITEMS.forEach((key,index)=>{
+                  let arr = Object.values(key)
+                  console.log(arr);
+                  arr.forEach((item,i)=>{
+                    arr[i] = Object.values(item)
+                    arr[i].forEach(vs=>{
+                      if(vs.VS_CODE == 'T10101' || vs.VS_CODE == 'T10201') vs.VS_VALUE == '' ? vs.VS_VALUE = '1' : null
+                      vs.key = Object.keys(key)[0]
+                      vs.err = false
+                    })
+                  })
+                  people.ITEMS[index] = Object.values(arr[0])
+                })
+              })
+              this.tableList = res.data.data
+              console.log(res)
+              this.template = Object.values(res.data.template)
+              console.log(this.template);
+            })
+          },
+          save : _debounce(function () {
+            var obj = {}
+            this.tableList.forEach((item,index)=>{
+              obj[item.INPATIENT_NUMBER] = [] //住院号
+              console.log(item.INPATIENT_NUMBER);
+              item.ITEMS.forEach(signs=>{
+                signs.forEach(sign=>{
+                  obj[item.INPATIENT_NUMBER].push({"value":sign.VS_VALUE,"key":sign.key,"code":sign.VS_CODE})
+                })
+              })
+            })
+
+            this.post('datacenter/vs-batch',{ tpl:this.tpl , date:this.date , data:JSON.stringify(obj) },res=>{
+              console.log(res);
+              if(res.status<400){
+                this.$message({type: 'success', message: '保存成功'})
+              }
+            })
+          }),
+          focus(data){
+            this.row = data
+          },
+          querySearch_input(queryString, cb) {
+            this.row.OPTION_LIST.forEach(item=>{
+              item.value = item.code
+            })
+            var restaurants = this.row.OPTION_LIST
+            var results = queryString ? restaurants.filter(this.createFilter(queryString)) : restaurants
+            cb(results)
+          },
+          createFilter(queryString) {
+            return (restaurant) => {
+              return (restaurant.name.toLowerCase().indexOf(queryString.toLowerCase()) === 0)
+            }
+          },
+          type_update(data,VALIDATION_RULE,INPATIENT_NUMBER){
+            data.err = false
+            if(data.VS_VALUE == '')  return
+
+            if(VALIDATION_RULE && VALIDATION_RULE.max && VALIDATION_RULE.min){
+              if(isNaN(data.VS_VALUE)){
+                data.err = true
+                return
+              }
+              if(data.VS_VALUE > Number(VALIDATION_RULE.max)) data.err = true
+              else if(data.VS_VALUE < Number(VALIDATION_RULE.min)) data.err = true
+              else data.err = false
+              if(data.err == true) return
+
+              data.VS_VALUE = Number(data.VS_VALUE).toFixed(Number(VALIDATION_RULE.decimal))
+              this.$refs.alertDialog.getData(data,INPATIENT_NUMBER)
+            }
+          }
+        }
+    }
+</script>
+
+<style scoped lang='stylus'>
+  .temperature
+    padding 10px 20px
+    .input-menu
+      margin-top 25px
+      margin-bottom 10px
+      .search
+        padding 12px 20px!important
+        border none
+        background-color #00B3DC
+        color #fff
+        margin-left 5px
+      .mar5
+        margin-left 5px
+      .filter
+        margin-left 10px
+        padding 12px 32px
+    .out-main
+    .el-table
+      &>>>.el-table__body-wrapper
+        .cell
+          div
+            display flex
+    &>>>.err
+      input
+        border 1px solid #E63922!important
+</style>

@@ -1,0 +1,100 @@
+<template>
+  <el-dialog :visible.sync="popshow" title='出量统计' width='660px'>
+    <div class='item'>
+      <label>开始时间</label>
+      <el-date-picker value-format='yyyy-MM-dd	HH:mm' format='yyyy-MM-dd	HH:mm' v-model="begin" type="datetime" placeholder="选择日期时间"></el-date-picker>
+      <label style='margin-left: 15px'>结束时间</label>
+      <el-date-picker value-format='yyyy-MM-dd	HH:mm' format='yyyy-MM-dd	HH:mm' v-model="end" type="datetime" placeholder="选择日期时间" readonly></el-date-picker>
+    </div>
+    <div class='item'>
+      <label>时间选择</label>
+      <el-select v-model='TIME'>
+        <el-option v-for="item in options"  :key="item.label"  :label="item.label" :value="item.value"></el-option>
+      </el-select>
+    </div>
+    <div class='item'>
+      <label>统计结果</label>
+      <el-input v-model='TOTAL' class='TOTAL' readonly></el-input>
+    </div>
+
+
+
+
+    <div slot="footer" class="dialog-footer">
+      <el-button @click="extend_record(1)" class='extend_record' v-if='end'>插入体温单</el-button>
+      <el-button @click="extend_record(2)" class='extend_record' v-if='end'>插入记录单</el-button>
+      <el-button @click="popshow = false" type='danger'>关闭</el-button>
+      <el-button @click="ok" type='primary'>统计</el-button>
+    </div>
+  </el-dialog>
+</template>
+
+<script>
+  import {_debounce} from "@/global";
+
+  export default {
+        name: "statistics",
+
+        props:['INPATIENT_NUMBER','id'],
+
+        data(){
+          return{
+            popshow : false,
+            begin : '',
+            end : '',
+            options:[{label:'8',value:'8'},{label:'12',value:'12'},{label:'24',value:'24'},{label:'48',value:'48'}],
+            TIME:'24',
+            TOTAL:''
+          }
+        },
+
+        methods:{
+          show(){
+            this.popshow = true
+            this.begin = ''
+            this.end = ''
+            this.TIME = '24'
+            this.TOTAL = ''
+          },
+          ok(){
+            if(!this.begin){
+              this.$message({type : 'warning',message : '开始时间不能为空'})
+              return
+            }
+            this.getSer('datacenter/record',{ CODE:'T10800' , BEGIN:this.begin , TIME:this.TIME , INPATIENT_NUMBER:this.INPATIENT_NUMBER ,ID:this.id },res=>{
+              console.log(res)
+              if(res.status<400){
+                this.end = res.data.end
+                this.TOTAL = res.data.total
+              }
+            })
+          },
+          extend_record : _debounce(function (TO) {
+            this.post('datacenter/record',{ INPATIENT_NUMBER:this.INPATIENT_NUMBER,TIME:this.TIME,CODE:'T10800',TOTAL:this.TOTAL, DATE:this.end,TO },res=>{
+              console.log(res);
+              let message = TO == 1 ? '已插入到体温单' : '已插入到记录单'
+              if(res.status<400){
+                this.$message({ type:'success',message })
+                this.popshow = false
+              }
+            })
+          })
+
+
+        }
+    }
+</script>
+
+<style scoped lang='stylus'>
+  .item
+    margin 18px 0
+    label
+      margin-right 10px
+  .extend_record
+    background-color #DDEFF9
+    color #00B3DC
+    border-color #DDEFF9
+    float left
+  .TOTAL
+    width 220px
+</style>

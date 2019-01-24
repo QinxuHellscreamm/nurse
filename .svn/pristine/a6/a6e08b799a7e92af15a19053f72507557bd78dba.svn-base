@@ -1,0 +1,113 @@
+<template>
+  <div>
+    <el-switch v-model="print_mian" active-text="双面打印" inactive-color="#ccc"></el-switch>
+    <print style='float: right;margin: 10px 20px'>打印</print>
+    <div class='content'>
+      <div ref='title' class='head' style='padding:20px 0;'>
+        <!--<h1 style='text-align :center;font-size :20px;line-height :40px'></h1>-->
+        <div style='width:100%;text-align :center;line-height :40px; font-family: 宋体; font-size:27px; font-weight:500;'>{{TITLE}}</div>
+      </div>
+      <div v-html='content' ref='content' class='content'></div>
+    </div>
+  </div>
+</template>
+
+<script>
+  import print from '@/components/print'
+    export default {
+        name: "notificationBook",
+
+        props:['INPATIENT_NUMBER','id'],
+
+        components:{print},
+
+        data(){
+          return{
+            content:'',
+            TITLE:''
+          }
+        },
+
+        methods:{
+          getData(){
+            this.getSer('datacenter/tempstyle/'+this.id, {id:this.id , inpatient_number:this.INPATIENT_NUMBER,is_preview:1 },res=>{
+              console.log(res);
+              this.content = res.data.content
+              this.TITLE = res.data.title
+              this.REPORT_TYPE = res.data.REPORT_TYPE
+            })
+          },
+          // refreshData(){
+          //   var txtInputObject = document.body.getElementsByClassName('lurudayin');
+          //   for (var i = 0; i < txtInputObject.length; i++) {
+          //     txtInputObject[i].setAttribute("value", txtInputObject[i].value);
+          //   }
+          // },
+          refreshData(){ //让innerHTML获取的内容包含input和select(option)的最新值
+            var allInputObject=document.body.getElementsByTagName("input");
+            for (var i = 0; i < allInputObject.length; i++) {
+              if(allInputObject[i].type=="checkbox")  {
+                if (allInputObject[i].checked )
+                  allInputObject[i].setAttribute("checked","checked");
+                else
+                  allInputObject[i].removeAttribute("checked");
+              } else if(allInputObject[i].type=="radio")  {
+                if (allInputObject[i].checked )
+                  allInputObject[i].setAttribute("checked","checked");
+                else
+                  allInputObject[i].removeAttribute("checked");
+              }else allInputObject[i].setAttribute("value",allInputObject[i].value);
+            };
+            for (i = 0; i < document.getElementsByTagName("select").length; i++) {
+              var sl=document.getElementsByTagName("select")[i];
+              for (j = 0; j < sl.options.length; j++) {
+                if (sl.options[j].selected)
+                  sl.options[j].setAttribute("selected","selected");
+                else sl.options[j]=new Option(sl.options[j].text,sl.options[j].value);
+              };
+            };
+          },
+          print_preview(){
+            console.log(this.$getLodop);
+            this.refreshData();
+            var LODOP = this.$getLodop()
+            LODOP.PRINT_INIT("");
+            if(this.REPORT_TYPE == 4){
+              LODOP.SET_PREVIEW_WINDOW(2);
+              LODOP.SET_PRINT_PAGESIZE(2,'210mm','297mm','a4');
+            }else{
+              LODOP.SET_PRINT_PAGESIZE(1,'210mm','297mm','a4');
+            }
+            // LODOP.SET_PRINT_MODE("PRINT_DUPLEX",2);//0-不控制 1-不双面 2-双面(长边装订) 3-小册子双面(短边装订_长边水平)
+            // LODOP.SET_PRINT_MODE("PRINT_DEFAULTSOURCE",4);//1-纸盒 4-手动 7-自动 0-不控制
+            LODOP.SET_PRINT_MODE("DOUBLE_SIDED_PRINT",true);//手动双面控制
+            LODOP.ADD_PRINT_HTM(20, 50, '100%', 100, this.$refs.title.innerHTML);  //在纸张的左上角 打印"页眉页脚内容"
+            LODOP.SET_PRINT_STYLEA(0, "ItemType", 1);  //这行的作用：让前一行的内容 每页都打印。
+            LODOP.ADD_PRINT_HTM(80,50,'100%','BottomMargin:50',this.$refs.content.innerHTML);
+            LODOP.SET_PRINT_MODE("PRINT_PAGE_PERCENT","Auto-Width");
+            LODOP.SET_SHOW_MODE("LANDSCAPE_DEFROTATED",1)
+            // LODOP.PRINT_DESIGN();
+            LODOP.PREVIEW();
+          },
+        },
+
+        mounted(){
+          this.$nextTick(()=>{
+            console.log(1);
+            this.getData    ()
+          })
+        },
+        watch:{
+          'id':function (id) {
+            this.getData()
+          },
+        }
+    }
+</script>
+
+<style scoped lang='stylus'>
+  .content
+    width 1047px
+    margin  0 auto
+
+</style>

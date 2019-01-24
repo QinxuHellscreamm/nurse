@@ -1,0 +1,260 @@
+<template>
+    <div class='index-page'>
+      <div class='header'>
+        <div class="logo"></div>
+        <div class='menu'>
+          <ul>
+            <router-link tag='li' to='/workstation/inPatients' class='btn-scroll-left' >{{ wardName }}</router-link>
+            <li  @click='routerList.length > showLength + indexFlag ? indexFlag = indexFlag + 1 : null' v-if='linkBtnShow'><i class='el-icon-caret-left'></i></li>
+            <transition v-for="(item,index) of routerList" :key='index' name='el-zoom-in-center'>
+              <router-link tag='li' :to='item.path' v-if='linkMIN <= index && index <= linkMAX && item.path' class='link' exact :data-index='index'>
+                <span>{{ item.title }}</span>
+                <i class="el-icon-circle-close" @click='close(index,$event,item.name,item.id)'></i>
+              </router-link>
+            </transition>
+            <li class='btn-scroll-right' @click='indexFlag > 0 ? indexFlag = indexFlag - 1 : null' v-if='linkBtnShow'><i class='el-icon-caret-right'></i></li>
+          </ul>
+
+        </div>
+        <div class="header-right">
+          <el-select v-model="value" style="margin-right:20px" @change='selectChange'>
+            <el-option v-for="(item,index) in wardList"  :key="index"  :label="item.WARD_NAME" :value="item.ID"></el-option>
+          </el-select>
+          <user :name='name'></user>
+        </div>
+      </div>
+
+      <transition name='el-zoom-in-center'>
+        <sidebar class='sidebar' v-if='$route.name != "patientDOC" && $route.name != "GrantpatientDOC"' ref='bar' v-show='sidebarShow'></sidebar>
+      </transition>
+      <div class='sidebar_btn' @click='sidebar_toogle' :class='{"el-icon-d-arrow-left" : sidebarShow == true, "el-icon-d-arrow-right" : sidebarShow == false}' v-if='$route.name != "patientDOC" && $route.name != "GrantpatientDOC"'></div>
+      <div class="main">
+        <keep-alive :include="keepAlive">
+          <router-view></router-view>
+        </keep-alive>
+      </div>
+
+      <transition name='el-zoom-in-top'>
+        <patientDetile v-if='$route.name == "inPatients" && $store.state.showType == "card"'></patientDetile>
+      </transition>
+    </div>
+</template>
+
+<script>
+
+  import sidebar from './component/sidebar/sidebar' //左侧导航
+  import patientDetile from './inPatients/patientDetile' //病人详情
+  import user from '@/components/user'
+    export default {
+        name: "workstation",
+
+        components : { sidebar , patientDetile , user },
+
+        data(){
+          return{
+            name : "",
+            value : "",
+            wardList : [],
+            wardName : '',
+            routerList : [],
+            indexFlag : 0,
+            linkBtnShow : false,
+            linkMAX : 0,
+            linkMIN : 0,
+            showLength : '',
+            screenValue : '',
+            keepAlive : ['PatientDocPage','batchEntryOfSigns'],//需要缓存的组件 的name
+            sidebarShow:true
+          }
+        },
+
+      methods:{
+        /*下拉功能*/
+        sidebar_toogle(){
+          this.sidebarShow = !this.sidebarShow
+        },
+        selectChange(val){
+          console.log(val)
+          this.post('datacenter/wardcookie',{ward_id : this.value}, res=>{
+            if(res.status < 400){
+              this.$message({type: 'success', duration : 1000, message: '切换成功!'})
+              sessionStorage.routerList = []
+
+              sessionStorage.userinfo = JSON.stringify({...JSON.parse(sessionStorage.userinfo) , ward_id:this.value })
+              this.$router.push('/workstation/inPatients')
+              setTimeout(()=>{
+                window.location.reload()
+              },1000)
+            }
+          })
+        },
+        /*下拉功能*/
+        //添加menu
+        judgePath(data){
+          let flag = true
+          this.routerList.forEach(item => {
+            item.title == data.title ? flag = false : null
+          })
+          if(flag) this.routerList.push({ title : data.title ,path : data.path , name : data.name, id : data.id })
+          sessionStorage.routerList = JSON.stringify(this.routerList)
+          this.$store.state.patientDocList = this.routerList
+        },
+        close(index,e,name,id){
+          console.log(index, e, name, id);
+          e.stopPropagation()
+
+
+          document.getElementsByClassName('router-link-active')[0].getAttribute('data-index')
+
+          if(id && document.getElementsByClassName('router-link-active')[0].getAttribute('data-index') > index){
+            document.getElementsByClassName('link')[index].style.display = 'none'
+          }else{
+            this.routerList.splice(index,1)
+          }
+
+
+
+
+          this.$route.name == name && this.$route.params.id == id || id == '' && this.$route.name == name ? this.routerList.length != 0 ? this.$router.go(-1) :  this.$router.push('/workstation/inPatients'): null
+
+          console.log(this.routerList)
+          this.$store.state.patientDocList = this.routerList
+          sessionStorage.routerList = JSON.stringify(this.routerList)
+        },
+        resize(){
+          window.screenWidth = document.getElementsByClassName('menu')[0].clientWidth - 300
+          //this.linkMAX = Math.floor(screenWidth / 144)
+          this.showLength = Math.floor(screenWidth / 144)
+          console.log(this.showLength);
+          this.linkMAX = this.indexFlag + this.showLength
+          this.linkMIN = this.linkMAX - this.showLength
+          /*docSidebar组件用到的 用于计算左侧导航的最小高度的*/
+
+          if(document.getElementsByClassName('index-page')[0])   document.getElementsByClassName('index-page')[0].style.minHeight = window.screen.availHeight + 'px'
+          if(document.getElementsByClassName('sidebar-main')[0]){
+            let height = document.getElementsByClassName('main')[0].clientHeight
+            document.getElementsByClassName('sidebar-main')[0].style.minHeight = height + 'px'
+          }
+        }
+      },
+
+      mounted(){
+        this.$nextTick(()=>{
+          this.resize()
+          window.onresize = () => {
+            this.resize()
+          }
+          if(sessionStorage.routerList){
+            this.routerList = JSON.parse(sessionStorage.routerList)
+            this.$store.state.patientDocList = this.routerList
+          }
+          let info = JSON.parse(sessionStorage.userinfo)
+          this.$store.state.userinfo = info
+
+          console.log(this.$store.state.userinfo)
+
+          this.name = this.$store.state.userinfo.real_name
+          this.wardList = this.$store.state.userinfo.ward_arr
+          this.value = this.$store.state.userinfo.ward_id
+          this.wardList.forEach(item=>{
+            this.value == item.ID ? this.wardName = item.WARD_NAME : null
+          })
+
+
+        })
+      },
+
+      watch:{
+        'indexFlag' : function () {
+          this.linkMAX = this.indexFlag + this.showLength
+          this.linkMIN = this.linkMAX - this.showLength
+        },
+        'routerList': {
+          handler(newValue, oldValue) {
+            newValue.length >= this.linkMAX ? this.linkBtnShow = true : this.linkBtnShow = false
+          },
+          deep : true
+        }
+      }
+    }
+</script>
+
+<style scoped lang='stylus'>
+.index-page
+  display flex
+  .header
+    position fixed
+    top 0
+    width 100%
+    height 56px
+    line-height 54px
+    background-color #1B2D4D
+    z-index 2000
+    display flex
+    .menu
+      flex 1
+      overflow hidden
+      padding-right 100px
+      ul
+        display flex
+        width 100%
+        height 100%
+        margin-left 30px
+        .btn-scroll-left
+        .btn-scroll-right
+        li
+          position relative
+          margin-left 10px
+          padding 0 20px
+          line-height 34px
+          height 34px
+          color #FFFFFF
+          background #3E5376
+          border-radius 5px 5px 0 0
+          cursor pointer
+          font-weight 600
+          margin-top 22px
+          &.link
+            padding 0 28px 0 24px
+          .el-icon-circle-close
+            position absolute
+            right 8px
+            top 10px
+          &.router-link-active
+            color #2B3A50
+            background-color #F3F3F8
+    .logo
+      width 246px
+      height 32px
+      background-image url("./logo.png")
+      margin 12px 0 0 20px
+    .header-right
+      margin-right 20px
+      .el-select >>> .el-input__inner
+        width 130px
+        height 32px
+        background #00B3DC
+        border none
+        border-radius 4px
+        color #FFFFFF
+        text-align center
+      .el-select >>> .el-icon-arrow-up:before
+        color #FFFFFF
+  .sidebar
+    width 185px
+    border-right none
+  .main
+    flex 1
+    margin-top 56px
+    background-color #f3f3f8
+    width 80%
+  .sidebar_btn
+    line-height 900px
+    font-size 16px
+    background-color #f3f3f8
+    padding 2px
+    display block
+
+    .el-icon-d-arrow-left:before
+      height 30px
+</style>

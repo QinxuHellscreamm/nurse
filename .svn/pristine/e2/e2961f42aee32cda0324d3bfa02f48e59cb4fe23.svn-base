@@ -1,0 +1,828 @@
+import Vue from 'vue'
+import Router from 'vue-router'
+
+import Login from'@/pages/login/login'
+import infoshare from'@/pages/infoshare/infoshare'
+
+
+
+
+
+
+/*护士工作站*/
+// import Workstation from '@workstation/workstation'
+// import inPatients from '@workstation/inPatients/inPatients'
+// import OutPatients from "@workstation/outPatients/outPatients"
+// import AccPatients from "@workstation/acc/accPatients"
+// import BatchEntryOfSigns from '@workstation/batchEntryOfSigns/batchEntryOfSigns'
+// import PatientDOC from '@workstation/PatientDOC/PatientDocPage'
+// import BatchBedSetUp from '@workstation/batchBedSetUp/batchBedSetUp'
+// import DoctorPro from '@workstation/doctorPro/doctorPro'
+// import ShiftReport from '@workstation/shiftReport/shiftReport'
+// import AdverseEventRep from '@workstation/adverseEventRep/adverseEventRep'
+// import BabyDOC from '@workstation/babyDOC/babyDocPage'
+
+
+/*护理管理 start*/
+/*import Nurse from '@nurse/nurse'
+import NurseScheduling from '@nurse/nurseScheduling/nurseScheduling'
+import OutArchives from '@nurse/outArchives'*/
+/*护理管理 end*/
+
+
+
+
+
+
+
+
+
+
+
+//
+// /*平台管理系统*/
+// import nursingPlatform from '@/pages/nursingPlatform/nursingPlatform'
+// /*system start*/
+// import System from '@system/system'
+// import Users from '@system/users/users'
+// import Roles from '@system/roles/roles'
+// import Auths from '@system/auths/auths'
+// import Log from '@system/log/log'
+// import LogManage from '@system/log/logManage'
+// import LogMobilenurse from '@system/log/logMobilenurse'
+//import Authsresources from '@system/authsresources/authsresources' //权限资源
+//import Frontroutes from '@system/frontroutes/frontroutes'  //前端路由
+//import Frontresources from '@system/frontresources/frontresources'  //前端资源
+//import Backauths from '@system/backauths/backauths'  //后端权限
+// /*system end*/
+//
+// /*知识库 start*/
+// import knowledgeBase from '@knowledge/knowledgeBase'
+// /*健康宣教库 start*/
+// import HealthBank from '@knowledge/healthBank/HealthBank'
+// /*健康宣教库 end*/
+// /*护理措施库 start*/
+// import NursingBank from '@knowledge/NursingBank'
+// import NursingCS from '@knowledge/NursingBank/NursingCS/NursingCS'
+// import SignRelation from '@knowledge/NursingBank/signRelation/signRelation'
+// import RiskRelation from '@knowledge/NursingBank/riskRelation/riskRelation'
+// /*护理措施库 end*/
+// /*护理路径库 start*/
+// import NursingPlanBank from '@knowledge/NursingPlanBank'
+// /*护理路径库 end*/
+// /*知识库 end*/
+//
+// /*documentAdmin*/
+// import DocumentAdmin from '@document/documentAdmin'
+// /*docTemplateAdmin start*/
+// import DocTemplateAdmin from '@docTemplateAdmin/docTemplateAdmin'
+// import AssessTPL from '@docTemplateAdmin/assessTPL'
+// import RecordTPL from '@docTemplateAdmin/recordTPL'
+// import HandoverTPL from '@docTemplateAdmin/handoverTPL'
+// import AddTemplate from '@docTemplateAdmin/addTemplate'
+// import EditTemplate from '@docTemplateAdmin/editTemplate'
+// /*docTemplateAdmin end*/
+// /*文书题目管理 start*/
+// import DocSubjectAdmin from '@docSubjectAdmin/docSubjectAdmin'
+// import AssessSub from '@docSubjectAdmin/assessSub'
+// import RecordSub from '@docSubjectAdmin/recordSub'
+// import HandoverSub from '@docSubjectAdmin/handoverSub'
+// /*文书题目管理 end*/
+// import TemperatureChartAdmin from '@document/temperatureChartAdmin/temperatureChartAdmin'
+// /*documentAdmin*/
+//
+// /*dictionary start*/
+// import Dictionary from '@dictionary/dictionary'
+// import Partdic from '@dictionary/partDic/partdic'
+// import Warddic from '@dictionary/wardDic/warddic'
+// /*dictionary->医嘱字典*/
+// import Advicedic from '@dictionary/adviceDic/advicedic'
+// import Advicecat from "@dictionary/adviceDic/adviceCat"
+// import Useway from "@dictionary/adviceDic/useway"
+// import Wayass from "@dictionary/adviceDic/wayass"
+// /*dictionary->医嘱字典*/
+// import Vitaldic from '@dictionary/vitalDic/vitaldic'
+// /*dictionary->人员字典 start*/
+// import Workersdic from '@dictionary/workersDic/workersdic'
+// import Doctordic from '@dictionary/workersDic/doctordic'
+// import Nursedic from '@dictionary/workersDic/nursedic'
+// /*dictionary->人员字典 end*/
+// /*dictionary->疾病字典*/
+// import Diseasedic from '@dictionary/diseaseDic/diseasedic'
+// /*dictionary->病人信息字典*/
+// import Patientinfodic from '@dictionary/patientinfoDic/patientinfodic'
+// /*dictionary end*/
+//
+// /*移动护士站*/
+// import MobileNurse from '@mobileNurse/mobileNurse'
+// /*移动护士站->住院模块*/
+// import InHospital from '@inhospital/inHospital'
+// import HealthEdu from '@inhospital/healthEdu/healthEdu'
+// import RiskRatin from '@inhospital/riskRatin/riskRatin'
+// import VitalSign from '@inhospital/vitalSign/vitalSign'
+// import MedicalOrder from '@inhospital/medical/medicalOrder'
+// /*移动护士站->住院模块*/
+// import Version from '@mobileNurse/version/version'
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*移动护士站*/
+/*护理管理平台 start*/
+/*import ManagePlatform from '@managePlatform/managePlatform'
+/!*护理管理 start*!/
+import Nurse from '@nurse/nurse'
+//import NurseScheduling from '@nurse/nurseScheduling/nurseScheduling'
+import OutArchives from '@nurse/outArchives/outArchives'
+import PeopleList from '@nurse/outArchives/peopleList'
+import AllRecord from '@nurse/outArchives/allRecord'
+
+import StrucAnalysis from '@nurse/strucAnalysis'
+import TurRate from '@nurse/turRate'
+/!*护理管理 end*!/
+/!*不良事件 *!/
+import adverseEvent from '@adverseEvent/adverseEvent'
+              /!*不良事件管理*!/
+import Manage from '@manage/manage'
+import EventList from '@manage/eventList'
+import Report from '@manage/report'
+import ViewReport from '@manage/viewReport'
+    /!*不良事件统计 *!/
+import Count from '@count/count'
+    /!*不良事件统计 end*!/
+import EventStaA from '@count/eventStaA'
+import EventStaB from '@count/eventStaB'
+import EventStaC from '@count/eventStaC'
+import EventStaD from '@count/eventStaD'
+import EventStaE from '@count/eventStaE'
+import EventStaF from '@count/eventStaF'
+import EventStaG from '@count/eventStaG'
+import EventStaH from '@count/eventStaH'
+/!*不良事件end*!/
+/!*实时统计*!/
+import RealTime from '@managePlatform/realTime/realTime'
+//import Incident from '@managePlatform/realTime/incident'
+import Orders from '@managePlatform/realTime/orders'
+import InpatientArea from '@managePlatform/realTime/inpatientArea'
+/!*智能排班*!/
+import Scheduling from '@managePlatform/scheduling/scheduling'
+/!*床位使用情况*!/
+import BedSituation from '@managePlatform/bedSituation/bedSituation'
+import Analysis from '@managePlatform/bedSituation/analysis/analysis'
+import Contrast from '@managePlatform/bedSituation/contrast/contrast'
+import Situation from '@managePlatform/bedSituation/situation'
+/!*敏感指标*!/
+import Sensitive from '@managePlatform/sensitive/sensitive'
+import SensitiveA from '@managePlatform/sensitive/sensitiveA'
+import SensitiveB from '@managePlatform/sensitive/sensitiveB'
+import SensitiveC from '@managePlatform/sensitive/sensitiveC'
+import SensitiveD from '@managePlatform/sensitive/sensitiveD'
+import SensitiveE from '@managePlatform/sensitive/sensitiveE'
+import SensitiveF from '@managePlatform/sensitive/sensitiveF'
+import SensitiveG from '@managePlatform/sensitive/sensitiveG'
+/!*ICU*!/
+import Icusensitive from '@managePlatform/ICUsensitive/ICUsensitive'
+import IcusensiA from '@managePlatform/ICUsensitive/ICUsensiA'
+import IcusensiB from '@managePlatform/ICUsensitive/ICUsensiB'
+import IcusensiC from '@managePlatform/ICUsensitive/ICUsensiC'
+/!*护士绩效考核*!/
+import Assessment from '@managePlatform/assessment/assessment'
+/!*护理满意度*!/
+import Satisfied from '@managePlatform/satisfied/satisfied'
+import SatisA from '@managePlatform/satisfied/satisA'
+import SatisB from '@managePlatform/satisfied/satisB'
+import SatisC from '@managePlatform/satisfied/satisC'
+/!*全息*!/
+import HologView from '@managePlatform/hologView/hologView'*/
+/*护理管理平台 end*/
+Vue.use(Router)
+
+export default new Router({
+  // mode:"history",
+  routes: [
+    {path:"/",name:'login',component:Login},
+    {path:"/login",name:'login',component:Login},
+    {path:"/infoshare/:id",name:'infoshare',component:infoshare},
+
+    //{
+    //               path :'/nursingPlatform/documentAdmin/docTemplateAdmin/editTemplate/:id',
+    //               name : 'editTemplate',
+    //               component : EditTemplate
+    //             },
+    // {
+    //   path:'/nursingPlatform',
+    //   name:'index',
+    //   component:nursingPlatform,
+    //   requireAuth: true ,
+    //   children: [
+    //
+    //     {
+    //       path: '/nursingPlatform/knowledgeBase',
+    //       name: 'knowledgeBase',
+    //       component: knowledgeBase,
+    //       children:[
+    //         {
+    //           path: '/nursingPlatform/knowledgeBase/HealthBank',
+    //           name: 'healthBank',
+    //           component: HealthBank
+    //         },
+    //         {
+    //           path: '/nursingPlatform/knowledgeBase/NursingBank',
+    //           name: 'nursingBank',
+    //           component: NursingBank,
+    //           children:[
+    //             {
+    //               path: '/nursingPlatform/knowledgeBase/NursingBank/NursingCS',
+    //               name: 'nursingCS',
+    //               component: NursingCS
+    //             },
+    //             {
+    //               path: '/nursingPlatform/knowledgeBase/NursingBank/signRelation',
+    //               name: 'signRelation',
+    //               component: SignRelation
+    //             },
+    //             {
+    //               path: '/nursingPlatform/knowledgeBase/NursingBank/riskRelation',
+    //               name: 'riskRelation',
+    //               component: RiskRelation
+    //             }
+    //           ],redirect: '/nursingPlatform/knowledgeBase/NursingBank/NursingCS'
+    //         },
+    //         {
+    //           path: '/nursingPlatform/knowledgeBase/NursingPlanBank',
+    //           name: 'NursingPlanBank',
+    //           component: NursingPlanBank
+    //         },
+    //       ],redirect:'/nursingPlatform/knowledgeBase/HealthBank'
+    //     },
+    //     {
+    //       path : '/nursingPlatform/documentAdmin',
+    //       name : 'documentAdmin',
+    //       component : DocumentAdmin,
+    //       children : [
+    //         {
+    //           path : '/nursingPlatform/documentAdmin/docTemplateAdmin',
+    //           name : 'docTemplateAdmin',
+    //           component : DocTemplateAdmin,
+    //           children : [
+    //             {
+    //               path :'/nursingPlatform/documentAdmin/docTemplateAdmin/assessTPL',
+    //               name : 'assessTPL',
+    //               component : AssessTPL
+    //             },
+    //             {
+    //               path :'/nursingPlatform/documentAdmin/docTemplateAdmin/recordTPL',
+    //               name : 'recordTPL',
+    //               component : RecordTPL
+    //             },
+    //             {
+    //               path :'/nursingPlatform/documentAdmin/docTemplateAdmin/handoverTPL',
+    //               name : 'handoverTPL',
+    //               component : HandoverTPL
+    //             },
+    //             {
+    //               path :'/nursingPlatform/documentAdmin/docTemplateAdmin/editTemplate/:id',
+    //               name : 'editTemplate',
+    //               component : EditTemplate
+    //             },
+    //             {
+    //               path :'/nursingPlatform/documentAdmin/docTemplateAdmin/addTemplate',
+    //               name : 'addTemplate',
+    //               component : AddTemplate
+    //             }
+    //           ],redirect:'/nursingPlatform/documentAdmin/docTemplateAdmin/assessTPL'
+    //         },
+    //         {
+    //           path : '/nursingPlatform/documentAdmin/docSubjectAdmin',
+    //           name : 'docSubjectAdmin',
+    //           component : DocSubjectAdmin,
+    //           children : [
+    //             {
+    //               path : '/nursingPlatform/documentAdmin/docSubjectAdmin/assessSub',
+    //               name : 'assessSub',
+    //               component : AssessSub
+    //             },
+    //             {
+    //               path : '/nursingPlatform/documentAdmin/docSubjectAdmin/recordSub',
+    //               name : 'recordSub',
+    //               component : RecordSub
+    //             },
+    //             {
+    //               path : '/nursingPlatform/documentAdmin/docSubjectAdmin/handoverSub',
+    //               name : 'handoverSub',
+    //               component : HandoverSub
+    //             }
+    //           ],redirect : '/nursingPlatform/documentAdmin/docSubjectAdmin/assessSub'
+    //         },
+    //         {
+    //           path : '/nursingPlatform/documentAdmin/temperatureChartAdmin',
+    //           name : 'temperatureChartAdmin',
+    //           component : TemperatureChartAdmin
+    //         }
+    //       ],redirect:'/nursingPlatform/documentAdmin/docTemplateAdmin'
+    //     },
+    //     {
+    //       path: '/nursingPlatform/dictionary',
+    //       name: 'dictionary',
+    //       component: Dictionary,
+    //       children: [
+    //         {
+    //           path : '/nursingPlatform/dictionary/partdic',
+    //           name : 'Partdic',
+    //           component : Partdic
+    //         },
+    //         {
+    //           path : '/nursingPlatform/dictionary/warddic',
+    //           name : 'Warddic',
+    //           component : Warddic
+    //         },
+    //         {
+    //           path : '/nursingPlatform/dictionary/advicedic',
+    //           name : 'Advicedic',
+    //           component : Advicedic,
+    //           children:[
+    //             {
+    //               path : '/nursingPlatform/dictionary/advicedic/advicecat',
+    //               name : 'Advicecat',
+    //               component : Advicecat
+    //             },
+    //             {
+    //               path : '/nursingPlatform/dictionary/advicedic/useway',
+    //               name : 'Useway',
+    //               component : Useway
+    //             },
+    //             {
+    //               path : '/nursingPlatform/dictionary/advicedic/wayass',
+    //               name : 'Wayass',
+    //               component : Wayass
+    //             }
+    //           ],redirect:'/nursingPlatform/dictionary/advicedic/advicecat'
+    //         },
+    //         {
+    //           path : '/nursingPlatform/dictionary/vitaldic',
+    //           name : 'Vitaldic',
+    //           component : Vitaldic
+    //         },
+    //         {
+    //             path : '/nursingPlatform/dictionary/patientinfodic',
+    //             name : 'patientinfodic',
+    //             component : Patientinfodic
+    //         },
+    //         {
+    //           path : '/nursingPlatform/dictionary/workersdic',
+    //           name : 'Workersdic',
+    //           component : Workersdic,
+    //           children : [
+    //             {
+    //               path : '/nursingPlatform/dictionary/workersdic/doctordic',
+    //               name : 'doctordic',
+    //               component : Doctordic
+    //             },
+    //             {
+    //               path : '/nursingPlatform/dictionary/workersdic/nursedic',
+    //               name : 'nursedic',
+    //               component : Nursedic
+    //             }
+    //           ],redirect:'/nursingPlatform/dictionary/workersdic/doctordic'
+    //         },
+    //         {
+    //           path : '/nursingPlatform/dictionary/diseasedic',
+    //           name : 'Diseasedic',
+    //           component : Diseasedic
+    //         },
+    //       ],redirect:'/nursingPlatform/dictionary/partdic'
+    //     },
+    //     {
+    //       path: '/nursingPlatform/system',
+    //       name: 'system',
+    //       component: System,
+    //       children: [
+    //         {
+    //           path : '/nursingPlatform/system/users',
+    //           name : 'users',
+    //           component : Users
+    //         },
+    //         {
+    //           path : '/nursingPlatform/system/roles',
+    //           name : 'roles',
+    //           component : Roles
+    //         },
+    //         {
+    //             path : '/nursingPlatform/system/auths',
+    //             name : 'auths',
+    //             component : Auths
+    //         },
+    //           {
+    //               path : '/nursingPlatform/system/authsresources',
+    //               name : 'authsresources',
+    //               component : Authsresources
+    //           },
+    //           {
+    //               path : '/nursingPlatform/system/backauths',
+    //               name : 'backauths',
+    //               component : Backauths
+    //           },
+    //           {
+    //               path : '/nursingPlatform/system/frontroutes',
+    //               name : 'frontroutes',
+    //               component : Frontroutes
+    //           },
+    //           {
+    //               path : '/nursingPlatform/system/frontresources',
+    //               name : 'frontresources',
+    //               component : Frontresources
+    //           },
+    //         {
+    //           path : '/nursingPlatform/system/log',
+    //           name : 'logma',
+    //           component : Log,
+    //           children : [
+    //             { path : '/nursingPlatform/system/log/logma',
+    //               name : 'log',
+    //               component : LogManage
+    //             },
+    //             { path : '/nursingPlatform/system/log/logmo',
+    //               name : 'logmo',
+    //               component : LogMobilenurse
+    //             },
+    //           ],redirect:'/nursingPlatform/system/log/logma'
+    //         }
+    //
+    //       ],redirect:'/nursingPlatform/system/users'
+    //     },
+    //     {
+    //       path: '/nursingPlatform/mobileNurse',
+    //       name: 'mobileNurse',
+    //       component: MobileNurse,
+    //       children:[
+    //         {
+    //           path : '/nursingPlatform/mobileNurse/inHospital',
+    //           name : 'InHospital',
+    //           component : InHospital,
+    //           children : [
+    //             {
+    //               path : '/nursingPlatform/mobileNurse/inHospital/healthEdu',
+    //               name : 'HealthEdu',
+    //               component : HealthEdu
+    //             },
+    //             {
+    //               path : '/nursingPlatform/mobileNurse/inHospital/riskRatin',
+    //               name : 'RiskRatin',
+    //               component : RiskRatin
+    //             },
+    //             {
+    //               path : '/nursingPlatform/mobileNurse/inHospital/vitalSign',
+    //               name : 'VitalSign',
+    //               component : VitalSign
+    //             },
+    //             {
+    //               path : '/nursingPlatform/mobileNurse/inHospital/medicalOrder',
+    //               name : 'MedicalOrder',
+    //               component : MedicalOrder
+    //             }
+    //           ],redirect:'/nursingPlatform/mobileNurse/inHospital/healthEdu'
+    //         },
+    //         {
+    //           path : '/nursingPlatform/mobileNurse/version',
+    //           name : 'version',
+    //           component : Version
+    //         }
+    //       ],redirect:'/nursingPlatform/mobileNurse/inHospital'
+    //     }
+    //   ],redirect:'/nursingPlatform/knowledgeBase/HealthBank'
+    // },
+
+    // {
+    //   path: '/workstation',
+    //   name: 'workstation',
+    //   component: Workstation,
+    //   children: [
+    //     {
+    //       path : '/workstation/inPatients',
+    //       name : 'inPatients',
+    //       component : inPatients
+    //     },
+    //     {
+    //       path : '/workstation/outPatients',
+    //       name : 'outPatients',
+    //       component : OutPatients
+    //     },
+    //     {
+    //       path : '/workstation/accPatients',
+    //       name : 'accPatients',
+    //       component : AccPatients
+    //     },
+    //     {
+    //       path : '/workstation/patientDOC/:id',
+    //       name : 'patientDOC',
+    //       component : PatientDOC
+    //     },
+    //     {
+    //       path : '/workstation/batchEntryOfSigns',
+    //       name : 'batchEntryOfSigns',
+    //       component : BatchEntryOfSigns
+    //     },
+    //     {
+    //       path : '/workstation/batchBedSetUp',
+    //       name : 'batchBedSetUp',
+    //       component : BatchBedSetUp
+    //     },
+    //
+    //     {
+    //       path : '/workstation/doctorPro',
+    //       name : 'doctorPro',
+    //       component : DoctorPro,
+    //     },
+    //     {
+    //       path : '/workstation/ShiftReport',
+    //       name : 'shiftReport',
+    //       component : ShiftReport
+    //     },{
+    //       path : '/workstation/adverseEventRep',
+    //       name : 'adverseEventRep',
+    //       component : AdverseEventRep,
+    //     },
+    //
+    //   ],redirect:'/workstation/inPatients'
+    // },
+
+/*
+    {
+      path: '/managePlatform',
+      name: 'managePlatform',
+      component: ManagePlatform,
+      children: [
+        {
+          path: '/managePlatform/nurse',
+          name: 'nurse',
+          component: Nurse,
+          children:[
+          /!*  {
+              path: '/managePlatform/nurse/nurseScheduling',
+              component: NurseScheduling
+            },*!/
+            {
+              path: '/managePlatform/nurse/outArchives',
+              name: 'outArchives',
+              component: OutArchives,
+              children:[
+                {
+                  path: '/managePlatform/nurse/outArchives/peopleList',
+                  name: 'peopleList',
+                  component: PeopleList
+                },
+                {
+                  path: '/managePlatform/nurse/outArchives/allRecord',
+                  name: 'allRecord',
+                  component: AllRecord
+                }
+              ],redirect:'/managePlatform/nurse/outArchives/peopleList'
+            },
+            {
+              path: '/managePlatform/nurse/strucAnalysis',
+              name: 'strucAnalysis',
+              component: StrucAnalysis
+            },
+            {
+              path: '/managePlatform/nurse/turRate',
+              name: 'turRate',
+              component: TurRate
+            },
+          ],redirect:'/managePlatform/nurse/outArchives'
+        },//护理管理
+        {
+          path: '/managePlatform/adverseEvent',
+          name: 'adverseEvent',
+          component: adverseEvent,
+          children:[
+            {
+              path: '/managePlatform/adverseEvent/manage',
+              name: 'manage',
+              component: Manage,
+              children:[
+                {
+                  path: '/managePlatform/adverseEvent/manage/eventList',
+                  name: 'eventList',
+                  component: EventList,
+                },
+                {
+                  path: '/managePlatform/adverseEvent/manage/report/:id',
+                  name: 'report',
+                  component: Report,
+                },
+               {
+                 path: '/managePlatform/adverseEvent/manage/viewReport/:id',
+                 name: 'viewReport',
+                 component: viewReport,
+               }
+              ],redirect:'/managePlatform/adverseEvent/manage/eventList'
+            },
+            {
+              path: '/managePlatform/adverseEvent/count',
+              name: 'count',
+              component: Count,
+              children:[
+                {
+                  path: '/managePlatform/adverseEvent/count/eventStaA',
+                  name: 'eventStaA',
+                  component: EventStaA,
+                },
+                {
+                  path: '/managePlatform/adverseEvent/count/eventStaB',
+                  name: 'eventStaB',
+                  component: EventStaB,
+                },
+                {
+                  path: '/managePlatform/adverseEvent/count/eventStaC',
+                  name: 'eventStaC',
+                  component: EventStaC,
+                },
+                {
+                  path: '/managePlatform/adverseEvent/count/eventStaD',
+                  name: 'eventStaD',
+                  component: EventStaD,
+                },
+                {
+                  path: '/managePlatform/adverseEvent/count/eventStaE',
+                  name: 'eventStaE',
+                  component: EventStaE,
+                },
+                {
+                  path: '/managePlatform/adverseEvent/count/eventStaF',
+                  name: 'eventStaF',
+                  component: EventStaF,
+                },
+                {
+                  path: '/managePlatform/adverseEvent/count/eventStaG',
+                  name: 'eventStaG',
+                  component: EventStaG,
+                },
+                {
+                  path: '/managePlatform/adverseEvent/count/eventStaH',
+                  name: 'eventStaH',
+                  component: EventStaH,
+                }
+                ],redirect:'/managePlatform/adverseEvent/count/eventStaA'
+            }
+          ],redirect:'/managePlatform/adverseEvent/manage/eventList'
+        },
+        {
+          path: '/managePlatform/realTime',
+          name: 'realTime',
+          component: RealTime,
+          children:[
+          /!*  {
+              path: '/managePlatform/realTime/incident',
+              name: 'incident',
+              component: Incident
+            },*!/
+            {
+              path: '/managePlatform/realTime/orders',
+              name: 'orders',
+              component: Orders
+            },
+            {
+              path: '/managePlatform/realTime/inpatientArea',
+              name: 'inpatientArea',
+              component: InpatientArea
+            }
+          ],redirect:'/managePlatform/realTime/orders'
+        },//实时统计
+        {
+          path: '/managePlatform/bedSituation',
+          name: 'bedSituation',
+          component: BedSituation,
+          children:[
+            {
+              path: '/managePlatform/bedSituation/analysis',
+              name: 'analysis',
+              component: Analysis
+            },
+            {
+              path: '/managePlatform/bedSituation/contrast',
+              name: 'contrast',
+              component: Contrast
+            },
+            {
+              path: '/managePlatform/bedSituation/situation',
+              name: 'situation',
+              component: Situation
+            }
+          ],redirect:'/managePlatform/bedSituation/analysis'
+        },//智能排班
+        {
+          path: '/managePlatform/scheduling',
+          name: 'scheduling',
+          component: Scheduling,
+        },
+        //床位使用情况
+        {
+          path: '/managePlatform/sensitive',
+          name: 'sensitive',
+          component: Sensitive,
+          children:[
+            {
+              path: '/managePlatform/sensitive/sensitiveA',
+              name: 'sensitiveA',
+              component: SensitiveA
+            },
+            {
+              path: '/managePlatform/sensitive/sensitiveB',
+              name: 'sensitiveB',
+              component: SensitiveB
+            },
+            {
+              path: '/managePlatform/sensitive/sensitiveC',
+              name: 'sensitiveC',
+              component: SensitiveC
+            },
+            {
+              path: '/managePlatform/sensitive/sensitiveD',
+              name: 'sensitiveD',
+              component: SensitiveD
+            },
+            {
+              path: '/managePlatform/sensitive/sensitiveE',
+              name: 'sensitiveE',
+              component: SensitiveE
+            },
+            {
+              path: '/managePlatform/sensitive/sensitiveF',
+              name: 'sensitiveF',
+              component: SensitiveF
+            },
+            {
+              path: '/managePlatform/sensitive/sensitiveG',
+              name: 'sensitiveG',
+              component: SensitiveG
+            },
+          ],redirect:'/managePlatform/sensitive/sensitiveA'
+        },//ICU
+        {
+          path: '/managePlatform/ICUsensitive',
+          name: 'Icusensitive',
+          component: Icusensitive,
+          children:[
+            {
+              path: '/managePlatform/ICUsensitive/ICUsensiA',
+              name: 'IcusensiA',
+              component: IcusensiA
+            },
+            {
+              path: '/managePlatform/ICUsensitive/ICUsensiB',
+              name: 'IcusensiB',
+              component: IcusensiB
+            },
+            {
+              path: '/managePlatform/ICUsensitive/ICUsensiC',
+              name: 'IcusensiC',
+              component: IcusensiC
+            },
+          ],redirect:'/managePlatform/ICUsensitive/IcusensiA'
+        },//护士绩效考核
+        {
+          path: '/managePlatform/assessment',
+          name: 'Assessment',
+          component: Assessment,
+        },
+        {
+          path: '/managePlatform/satisfied',
+          name: 'satisfied',
+          component: Satisfied,
+          children:[
+            {
+              path: '/managePlatform/satisfied/satisA',
+              name: 'satisA',
+              component: SatisA
+            },
+            {
+              path: '/managePlatform/satisfied/satisB',
+              name: 'satisB',
+              component: SatisB
+            },
+            {
+              path: '/managePlatform/satisfied/satisC',
+              name: 'satisC',
+              component: SatisC
+            },
+          ],redirect:'/managePlatform/satisfied/satisA'
+        },
+        {
+          path: '/managePlatform/hologView',
+          name: 'hologView',
+          component: HologView,
+        },
+      ],redirect:'/managePlatform/realTime/orders'
+    },*/
+  ]
+})
+

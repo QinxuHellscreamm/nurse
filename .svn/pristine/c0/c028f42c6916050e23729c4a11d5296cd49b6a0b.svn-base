@@ -1,0 +1,150 @@
+<template>
+  <el-dialog :visible.sync="popshow" width='580px' class='custom'>
+    <div slot='title'>
+      <span class="el-dialog__title" >{{title}}</span>
+    </div>
+    <div class="min" v-if="title=='执行皮试'">
+      <div style="margin-bottom: 20px;">
+        <span style="margin-right: 10px;">开始时间</span>
+        <el-date-picker :clearable="false" v-model="starTime" value-format='yyyy-MM-dd	HH:mm' format="yyyy-MM-dd	HH:mm" type="datetime" placeholder="选择日期时间"></el-date-picker>
+      </div>
+      <div style="margin-bottom: 20px;">
+        <span style="margin-right: 10px;">观察时间</span>
+        <el-time-select v-model="hour" :picker-options="{start: '24:00',step: '24:00',end: '72:00'}" placeholder="选择时间"></el-time-select>
+        <el-time-select v-model="minute" :picker-options="{start: '00:05',step: '00:05',end: '00:55'}" placeholder="选择时间"></el-time-select>
+      </div>
+      <div style="text-align: right;">
+        <el-button @click="popshow = false">取 消</el-button>
+        <el-button type="primary" @click="submitForm">确 定</el-button>
+      </div>
+    </div>
+    <div class="min" v-if='title=="皮试结果"'>
+      <div style="margin-bottom: 20px;">
+        <span style="margin-right: 10px;">皮试结果</span>
+        <el-radio v-model="radioRes" label="1">阴性</el-radio>
+        <el-radio v-model="radioRes" label="2">阳性</el-radio>
+      </div>
+      <div style="margin-bottom: 20px;" class="startime">
+        <span style="margin-right: 10px;">结束时间</span>
+        <el-date-picker :clearable="false" v-model="skinStarTime" type="datetime" value-format='yyyy-MM-dd	HH:mm' format="yyyy-MM-dd	HH:mm" placeholder="选择日期时间"></el-date-picker>
+      </div>
+      <div style="margin-bottom: 20px;" class="nurse">
+        <span style="margin-right: 10px;">执行护士</span>
+        <el-input v-model="execNurse" disabled></el-input>
+        <span style="margin-right: 10px;">校对护士</span>
+        <el-select v-model='nurseName' @change='log'>
+          <el-option :label="item.NAME" :value="item.JOB_NUMBER" v-for='(item,i) of nurseList' :key='i'></el-option>
+        </el-select>
+
+      </div>
+
+      <div style="text-align: right;">
+        <el-button @click="popshow = false">取 消</el-button>
+        <el-button type="primary" @click="testResult">确 定</el-button>
+      </div>
+
+      <el-dialog title="提示" :visible.sync="dialogVisible" width="400px" append-to-body top="200px">
+        <span>后台消息:皮试观察时间不足,不允许录入皮试结果</span>
+        <span slot="footer" class="dialog-footer">
+          <el-button type="primary" @click="dialogVisible = false">确 定</el-button>
+        </span>
+      </el-dialog>
+    </div>
+  </el-dialog>
+</template>
+<script>
+  import {_YMDhms} from "@/global";
+
+  export default{
+      props : ['list_id'],
+
+      data(){
+          return {
+            title:'',
+            popshow : false,
+            radio:1,
+            starTime: '',
+            radioRes:'1',
+            skinStarTime: '',
+            execNurse: '',
+            prooNurse: '',
+            textarea: '',
+            dialogVisible: false,
+            nurseList : [],
+            nurseName : '',
+            minute:'',
+            hour:''
+          }
+      },
+
+      methods: {
+        dataTime(){
+          this.starTime =  _YMDhms()
+          this.skinStarTime =  _YMDhms()
+        },
+        log(val){
+          this.nurseList.forEach(item=>{
+            val == item.JOB_NUMBER ? this.nurse = item : null
+        })
+          console.log(this.nurse);
+        },
+        submitForm() {
+          let observe_time = 0
+          if(this.minute || this.hour){
+            if(this.hour) observe_time += this.hour.split(':')[0]*60-0
+            if(this.minute)  observe_time += this.minute.split(':')[1]-0
+          }else{
+            this.$message({type: 'warning', message: '观察时间不能为空!'})
+          }
+          this.post('datacenter/skin/do',{list_id:this.list_id,execute_time:this.starTime,observe_time},res=>{
+            if(res.status < 400){
+              this.$message({type: 'success', message: '执行成功!'})
+              //this.$parent.getData()
+              this.popshow = false
+            }
+          })
+        },
+        testResult(){
+          if(this.nurseName == "" ){
+            this.$message({type: 'warning', message: '校对护士不能为空!'})
+            return
+          }
+          this.post('datacenter/skin/addresult',{list_id:this.list_id,execute_time:this.skinStarTime,skin_test_result:this.radioRes,check_user:this.nurseName},res=>{
+            if(res.status < 400){
+            this.$message({type: 'success', message: '录入成功!'})
+            this.popshow = false
+          }
+        })
+          //this.dialogVisible = true
+        },
+        nurses(){
+          if(this.title=='皮试结果'){
+            this.execNurse = decodeURIComponent(this.getCookieVal("real_name"))
+            this.getSer('datacenter/nursemanage/nurses',{ war_id : this.$store.state.userinfo.ward_id }, res => {
+              console.log('护士下拉',res)
+              this.nurseList = res.data.items
+          })
+          }
+        },
+
+
+      },
+
+      mounted(){
+        this.$nextTick(()=>{
+          this.dataTime()
+        })
+      },
+
+    }
+</script>
+<style scoped lang='stylus'>
+  .startime .el-date-editor.el-input
+    width 196px
+  .nurse .el-input
+    width 196px
+  .nurse .el-select
+    width 196px
+  .textarea .el-textarea
+    width 466px
+</style>

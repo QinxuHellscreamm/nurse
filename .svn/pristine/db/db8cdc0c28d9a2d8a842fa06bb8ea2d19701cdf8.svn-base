@@ -1,0 +1,68 @@
+<template>
+  <tr>
+    <td :colspan='6*ten' style='width: 83px;word-wrap: break-word; word-break: normal; '>{{sign.NAME}}</td>
+    <td v-for='(item,index) of signs' :key=index :colspan='6*ten/frequency' >
+      <p :class='{"top":index%2==0}' class='pp'>
+        <span>{{ item[item.length-1].VS_VALUE == 2 ? 'A': item[0].VS_VALUE }}</span>
+      </p>
+    </td>
+  </tr>
+</template>
+
+<script>
+  export default {
+    name: "breathing",
+
+    props : ['sign'],
+
+    data(){
+      return{
+        ten : 30,
+        signs : [],
+        frequency : 0
+      }
+    },
+
+    methods : {
+
+    },
+
+    mounted(){
+      this.$nextTick(()=>{
+
+        let arr = []
+        this.sign.items.forEach(oneDay=>{
+
+          for(var k in oneDay){
+            arr.push(oneDay[k])
+          }
+        })
+        this.signs = arr
+        console.log(arr);
+        this.frequency = arr.length / 7
+      })
+    },
+
+
+
+  }
+</script>
+
+<style scoped lang='stylus'>
+  td
+    font-size 12px
+    line-height 1
+    height 28px
+    text-align center
+    word-wrap break-word
+    word-break normal
+  span
+    font-size 12px
+    display block
+  p
+    width 15px
+    top 5px
+    position relative
+  .top
+    top -5px
+</style>

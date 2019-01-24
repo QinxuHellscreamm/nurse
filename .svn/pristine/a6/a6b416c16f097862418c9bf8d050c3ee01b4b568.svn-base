@@ -1,0 +1,256 @@
+<template>
+    <div class='other-sign'>
+      <div class="submit_form" v-show='type=="submit"'>
+        <div class='top-menu'>
+          <el-date-picker v-model="date" type="date" value-format="yyyy-MM-dd" format="yyyy-MM-dd" placeholder="选择日期"></el-date-picker>
+          <el-button type='primary' @click='entry' class='save' style='margin-left: 10px;'>保存</el-button>
+          <el-button type='primary' @click='type="edit"' class='edit' style='margin-left: 10px;'>表单编辑</el-button>
+          <div class='btn-menu'>
+
+
+          </div>
+        </div>
+        <div class="out-main">
+          <el-table :data='tableList'>
+            <el-table-column label='床号' prop='BED_NUMBER' width='100'></el-table-column>
+            <el-table-column label='姓名' prop='NAME' width='120'></el-table-column>
+            <el-table-column v-for='(item,index) of labels' :label='item.label' :key='index' :width='template[item.index].SUB_CODE.length > 0 ? 120 + template[item.index].SUB_CODE.length*100 : 120'>
+              <template slot-scope="scope">
+                <div class='flex' v-if='template[item.index].CODE != "T10700" && template[item.index].CODE != "T10900"'>
+                  <span v-for='(sub,subindex) of template[item.index].SUB_CODE' v-if='template[item.index].SUB_CODE.length' :class='{"width92":template[item.index].CODE=="T10600"}'>
+                      <el-select v-model='scope.row.VICE[item.index][item.signIndex][subindex+1].VS_VALUE' placeholder='' v-if='sub.INPUT_TYPE_CODE == "03"'>
+                          <el-option v-for='itemO of sub.OPTION_LIST' :key="itemO.code" :label="itemO.name" :value="itemO.code"></el-option>
+                      </el-select>
+                      <el-input v-model='scope.row.VICE[item.index][item.signIndex][subindex+1].VS_VALUE' v-if='sub.INPUT_TYPE_CODE == "01" || sub.INPUT_TYPE_CODE == "02"' :maxlength='sub.INPUT_LENGTH' @change='type_update(scope.row.VICE[item.index][item.signIndex][subindex+1],sub.VALIDATION_RULE,scope.row.INPATIENT_NUMBER)' :class="{'err':scope.row.VICE[item.index][item.signIndex][subindex+1].err}"></el-input>
+                      <b v-if='sub.SIGN_CODE == "T10601"'>/</b>
+                      <el-autocomplete v-if='sub.INPUT_TYPE_CODE == "04"' v-model="scope.row.VICE[item.index][item.signIndex][subindex+1].VS_VALUE" :fetch-suggestions="querySearch_input" placeholder="" @focus='focus(sub)' :maxlength='Number(sub.INPUT_LENGTH)' @select="type_update(scope.row.VICE[item.index][item.signIndex][subindex+1],sub.VALIDATION_RULE,scope.row.INPATIENT_NUMBER)" @blur='type_update(scope.row.VICE[item.index][item.signIndex][subindex+1],sub.VALIDATION_RULE,scope.row.INPATIENT_NUMBER)' :class="{'err':scope.row.VICE[item.index][item.signIndex][subindex+1].err}"></el-autocomplete>
+                  </span>
+                  <span>
+                    <el-select v-model='scope.row.VICE[item.index][item.signIndex][0].VS_VALUE' placeholder='' v-if='template[item.index].INPUT_TYPE_CODE == "03"'>
+                      <el-option v-for='itemO of template[item.index].OPTION_LIST' :key="itemO.code" :label="itemO.name" :value="itemO.code"></el-option>
+                    </el-select>
+                    <el-input v-model='scope.row.VICE[item.index][item.signIndex][0].VS_VALUE' v-if='template[item.index].INPUT_TYPE_CODE == "01" || template[item.index].INPUT_TYPE_CODE == "02"' :maxlength='template[item.index].INPUT_LENGTH' @change='type_update(scope.row.VICE[item.index][item.signIndex][0],template[item.index].VALIDATION_RULE,scope.row.INPATIENT_NUMBER)' :class="{'err':scope.row.VICE[item.index][item.signIndex][0].err}"></el-input>
+                    <el-autocomplete v-if='template[item.index].INPUT_TYPE_CODE == "04"' v-model="scope.row.VICE[item.index][item.signIndex][0].VS_VALUE" :fetch-suggestions="querySearch_input" placeholder="" @focus='focus(template[item.index])' :maxlength='Number(template[item.index].INPUT_LENGTH)' @select="type_update(scope.row.VICE[item.index][item.signIndex][0],template[item.index].VALIDATION_RULE,scope.row.INPATIENT_NUMBER)" @blur='type_update(scope.row.VICE[item.index][item.signIndex][0],template[item.index].VALIDATION_RULE,scope.row.INPATIENT_NUMBER)' :class="{'err':scope.row.VICE[item.index][item.signIndex][0].err}"></el-autocomplete>
+                  </span>
+                </div>
+                <div class='flex' v-if='template[item.index].CODE == "T10700"'><!--大便-->
+                  <span v-for='(sub,subindex) of template[item.index].SUB_CODE' v-if='template[item.index].SUB_CODE.length'>
+                    <el-select v-model='scope.row.VICE[item.index][item.signIndex][subindex+1].VS_VALUE' placeholder='' v-if='sub.INPUT_TYPE_CODE == "03"' @change='change_t10700' @focus='focus_t10702(scope.row.VICE[item.index][item.signIndex])'>
+                      <el-option v-for='itemO of sub.OPTION_LIST' :key="itemO.code" :label="itemO.name" :value="itemO.code"></el-option>
+                    </el-select>
+                    <el-input v-model='scope.row.VICE[item.index][item.signIndex][subindex+1].VS_VALUE' v-show='sub.INPUT_TYPE_CODE == "01" || sub.INPUT_TYPE_CODE == "02"' :maxlength='sub.INPUT_LENGTH' v-if='sub.SIGN_CODE == "T10702" && scope.row.VICE[item.index][item.signIndex][1].VS_VALUE =="3"' @change='type_update(scope.row.VICE[item.index][item.signIndex][subindex+1],sub.VALIDATION_RULE,scope.row.INPATIENT_NUMBER)' :class="{'err':scope.row.VICE[item.index][item.signIndex][subindex+1].err}"></el-input>
+                    <el-input v-model='scope.row.VICE[item.index][item.signIndex][subindex+1].VS_VALUE' v-show='sub.INPUT_TYPE_CODE == "01" || sub.INPUT_TYPE_CODE == "02"' :maxlength='sub.INPUT_LENGTH' v-if='sub.SIGN_CODE == "T10703"' @change='type_update(scope.row.VICE[item.index][item.signIndex][subindex+1],sub.VALIDATION_RULE,scope.row.INPATIENT_NUMBER)' :class="{'err':scope.row.VICE[item.index][item.signIndex][subindex+1].err}"></el-input>
+                  </span>
+                  <span>
+                    <el-input v-model='scope.row.VICE[item.index][item.signIndex][0].VS_VALUE' v-if='template[item.index].INPUT_TYPE_CODE == "01" || template[item.index].INPUT_TYPE_CODE == "02"' :maxlength='template[item.index].INPUT_LENGTH' @change='type_update(scope.row.VICE[item.index][item.signIndex][0],template[item.index].VALIDATION_RULE,scope.row.INPATIENT_NUMBER)' :class="{'err':scope.row.VICE[item.index][item.signIndex][0].err}"></el-input>
+                  </span>
+                </div>
+                <div class='flex' v-if='template[item.index].CODE == "T10900"'><!--小便-->
+                  <span v-for='(sub,subindex) of template[item.index].SUB_CODE'>
+                    <el-select v-model='scope.row.VICE[item.index][item.signIndex][subindex+1].VS_VALUE' placeholder='' v-if='sub.INPUT_TYPE_CODE == "03"' :maxlength='sub.INPUT_LENGTH' @change='change_t10900' @focus='focus_t10900(scope.row.VICE[item.index][item.signIndex])'>
+                      <el-option v-for='itemO of sub.OPTION_LIST' :key="itemO.code" :label="itemO.name" :value="itemO.code"></el-option>
+                    </el-select>
+                    <el-input v-model='scope.row.VICE[item.index][item.signIndex][subindex+1].VS_VALUE' v-show='sub.INPUT_TYPE_CODE == "01" || sub.INPUT_TYPE_CODE == "02"' @change='type_update(scope.row.VICE[item.index][item.signIndex][0],template[item.index].VALIDATION_RULE,scope.row.INPATIENT_NUMBER)' :class="{'err':scope.row.VICE[item.index][item.signIndex][0].err}"></el-input>
+                  </span>
+                  <span>
+                    <el-input v-model='scope.row.VICE[item.index][item.signIndex][0].VS_VALUE' v-if='template[item.index].INPUT_TYPE_CODE == "01" || template[item.index].INPUT_TYPE_CODE == "02"' :maxlength='template[item.index].INPUT_LENGTH' @change='type_update(scope.row.VICE[item.index][item.signIndex][0],template[item.index].VALIDATION_RULE,scope.row.INPATIENT_NUMBER)' :class="{'err':scope.row.VICE[item.index][item.signIndex][0].err}"></el-input>
+                  </span>
+                </div>
+              </template>
+            </el-table-column>
+            <el-table-column ></el-table-column>
+          </el-table>
+        </div>
+      </div>
+      <setting-sign v-if='type=="edit"' :editData='editData' :tpl='tpl' :tit='tit' :signList='signList'></setting-sign>
+      <sign-build-record ref='alertDialog'></sign-build-record>
+    </div>
+</template>
+
+<script>
+  import { _debounce } from "@/global"
+  import settingSign from './settingSign'
+  import signBuildRecord from '@/pages/workstation/component/signBuildRecord'
+  export default {
+    name: "otherSignItem",
+
+    components: { settingSign , signBuildRecord },
+
+    props:['tpl','TITLE','signList'],
+
+        data(){
+          return{
+            tableList : [],
+            date : '',
+            type : 'submit',
+            editData : [],
+            tit : '',
+            row:{},
+            labels : [],
+            template:[],
+
+            arr_t10700 : [],
+            arr_t10900 : [],
+          }
+        },
+
+        methods:{
+          getData(){
+            var obj = {  date : this.date , tpl : this.tpl , war_id : this.$store.state.userinfo.ward_id }
+            this.getSer('datacenter/vs-batch',obj,res=>{
+              var a = JSON.stringify(res.data.template)
+              this.editData = Object.values(JSON.parse(a))
+              this.template = res.data.template
+              let labels = res.data.template
+              let arr = []
+              labels.forEach((template,index)=>{
+                template.TIMES.forEach((item,signIndex)=>{
+                  arr.push({ label:template.NAME + item , index , signIndex })
+                })
+              })
+              this.labels = arr
+
+              res.data.data.forEach(data=>{
+                data.VICE.forEach((vice,i)=>{
+                  data.VICE[i] = Object.values(vice)
+                  data.VICE[i].forEach((item,index)=>{
+                    data.VICE[i][index] = Object.values(item)
+                    data.VICE[i][index].forEach(setkey=>{
+                      setkey.err = false
+                      setkey.key = index + 1
+                    })
+                  })
+                })
+              })
+              this.tableList = res.data.data
+              console.log(this.tableList);
+              console.log(this.tpl , res)
+            })
+          },
+          type_update(data,VALIDATION_RULE,INPATIENT_NUMBER){
+            data.err = false
+            if(data.VS_VALUE == '')  return
+
+            if(VALIDATION_RULE && VALIDATION_RULE.max && VALIDATION_RULE.min){
+              if(isNaN(data.VS_VALUE)){
+                data.err = true
+                return
+              }
+              if(data.VS_VALUE > Number(VALIDATION_RULE.max)) data.err = true
+              else if(data.VS_VALUE < Number(VALIDATION_RULE.min)) data.err = true
+              else data.err = false
+              if(data.err == true) return
+
+              data.VS_VALUE = Number(data.VS_VALUE).toFixed(Number(VALIDATION_RULE.decimal))
+              console.log(1);
+              this.$refs.alertDialog.getData(data,INPATIENT_NUMBER)
+            }
+          },
+          focus(data){
+            this.row = data
+          },
+          querySearch_input(queryString, cb) {
+            this.row.OPTION_LIST.forEach(item=>{
+              item.value = item.code
+            })
+            var restaurants = this.row.OPTION_LIST
+            var results = queryString ? restaurants.filter(this.createFilter(queryString)) : restaurants
+            cb(results)
+          },
+          createFilter(queryString) {
+            return (restaurant) => {
+              return (restaurant.name.toLowerCase().indexOf(queryString.toLowerCase()) === 0)
+            }
+          },
+          change_t10700(val){
+            val != 3 ? this.arr_t10700[2].VS_VALUE = '' : null
+            val == 1 ? this.arr_t10700[3].VS_VALUE = '0' : null
+          },
+          focus_t10702(val){
+            this.arr_t10700 = val
+          },
+          change_t10900(val){
+            console.log(val)
+            val == 1 ? this.arr_t10900[0].VS_VALUE = '0' : null
+          },
+          focus_t10900(val){
+            console.log(val)
+            this.arr_t10900 = val
+          },
+          entry : _debounce(function () {
+            let obj = {}
+            this.tableList.forEach(row=>{
+              obj[row.INPATIENT_NUMBER] = []//住院号
+              row.VICE.forEach(signs=>{
+                signs.forEach(item=>{
+                  item.forEach(sign=>{
+                    obj[row.INPATIENT_NUMBER].push({"value":sign.VS_VALUE,"key":sign.key,"code":sign.VS_CODE})
+                  })
+                })
+              })
+            })
+
+            this.post('datacenter/vs-batch',{ tpl:this.tpl , date:this.date ,data : JSON.stringify(obj)},res=>{
+              console.log(res);
+              if(res.status<400){
+                this.$message({type: 'success', message: '保存成功'})
+                this.$parent.$parent.$parent.getTabData()
+                this.getData()
+              }
+            })
+          }),
+          update(){
+            this.$parent.$parent.$parent.getTabData()
+            this.type = 'submit'
+          }
+        },
+
+        mounted(){
+          this.$nextTick(()=>{
+            let date = new Date()
+            let year = date.getFullYear()
+            let month = date.getMonth() + 1
+            let strDate = date.getDate()
+            if (month >= 1 && month <= 9) month = "0" + month
+            if (strDate >= 0 && strDate <= 9) strDate = "0" + strDate
+            let str =  year + '-' + month + '-' + strDate
+            this.date = str
+            this.getData()
+            this.tit = this.TITLE.TITLE
+          })
+        }
+    }
+</script>
+
+<style scoped lang='stylus'>
+  .other-sign
+    padding 10px 20px
+    margin-top 25px
+    .top-menu
+      display flex
+      margin-bottom 10px
+      .btn-menu
+        flex 1
+        text-align right
+        .tit
+          width 310px
+  .el-table
+    &>>>.el-table__body-wrapper
+      .cell
+        .flex
+          display flex
+    &>>>.el-table__header-wrapper
+      .cell
+        font-size 12px
+    &>>>.err
+      input
+        border 1px solid #E63922!important
+    .el-input,.el-select
+      height 36px
+      &>>>.el-input__inner
+        height 36px
+        line-height 36px
+  .width92
+    .el-input
+      width 88%
+</style>

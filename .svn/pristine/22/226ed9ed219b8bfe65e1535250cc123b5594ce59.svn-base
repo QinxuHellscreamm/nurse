@@ -1,0 +1,33 @@
+<template>
+  <div style="height: 100%;">
+    <tabBar :moduleList="list" :content="content" :page="page"></tabBar>
+  </div>
+</template>
+<script>
+  import tabBar from '../component/tabBar.vue'
+  export default{
+    data(){
+      return {
+        list:["医嘱执行","新入病区"],
+        content:["orders","inpatientArea"],
+        page:'realTime'
+      }
+    },
+
+    components:{tabBar},
+
+    mounted() {
+      /*this.$nextTick(() => {
+        //文书静态资源session存储
+        this.getSer('datacenter/collocation', {} ,res => {
+        sessionStorage.setItem('publicDoc',JSON.stringify(res.data.items))
+      console.log("wdwad",this.$store.getters.getPublicDoc)
+    })
+    })*/
+    }
+
+  }
+</script>
+<style scoped>
+
+</style>

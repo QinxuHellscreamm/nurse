@@ -1,0 +1,133 @@
+<template>
+    <el-dialog :visible.sync="popshow" width='730px' title='病区设置' class="actname">
+      <el-tabs v-model="activeName" @tab-click="handleClick">
+        <el-tab-pane label="病人标识项" name="病人标识项">
+          <el-checkbox-group v-model="bed_checkList" class='bed_checkList'>
+            <ul>
+              <li v-for='item of bed_sign_list'>
+                <el-checkbox :label="item.ID"  :key='item.ID' >{{item.NAME}}</el-checkbox>
+              </li>
+            </ul>
+          </el-checkbox-group>
+        </el-tab-pane>
+        <el-tab-pane label="卡片显示项" name="卡片显示项">
+          <el-checkbox-group v-model="card_checkList" class='bed_checkList'>
+            <ul>
+              <li v-for='item of card_show_list'>
+                <el-checkbox :label="item.ID"  :key='item.ID' >{{item.NAME}}</el-checkbox>
+              </li>
+            </ul>
+          </el-checkbox-group>
+        </el-tab-pane>
+      </el-tabs>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="save" class='application'>应用</el-button>
+      </div>
+    </el-dialog>
+</template>
+
+<script>
+    export default {
+        name: "setting",
+
+        data(){
+          return{
+            popshow : false,
+            activeName : '病人标识项',
+            opt_list : [],
+            bed_sign_list : [],
+            card_show_list : [],
+            bed_checkList : [],
+            card_checkList : [],
+            ward_id : ''
+          }
+        },
+
+        methods : {
+          handleClick(tab, event) {
+            console.log(tab, event);
+          },
+          save(){
+            console.log('saveSetopt');
+            this.popshow=false;
+            this.opt_list = this.bed_checkList;
+            this.opt_list.push(...this.card_checkList);
+            if ( ! this.opt_list)
+            {
+                this.$message({type: 'warning', message: '设置参数为空!'});
+                return false;
+            }
+            this.post("datacenter/bedoverviewset",{items:JSON.stringify(this.opt_list)}, (res) => {
+                if(res.status <= 400){
+                    this.popshow=false;
+                    this.$message({type: 'success', message: '设置成功!'});
+                    //设置成功后  需要刷新页面
+                    setTimeout(()=>{
+                        window.location.reload()
+                    },1000)
+                }
+            })
+          }
+        },
+
+        created(){
+          this.$nextTick(()=>{
+            window.setTimeout(()=>{
+              this.getSer("datacenter/bedoverviewset",{}, (res) => {
+                console.log(res);
+                if(res.status <= 400){
+                  this.bed_sign_list = res.data.bed_sign_list
+                  this.card_show_list = res.data.card_show_list
+                }
+              })
+              console.log('this.$store.state.userinfo',this.$store.state.userinfo)
+              this.getSer("datacenter/bedoverviewset/" + this.$store.state.userinfo.ward_id,{ id : this.$store.state.userinfo.ward_id }, res => {
+                console.log('look');
+                console.log(res);
+                if(res.status <= 400){
+                  this.bed_checkList = res.data.items.bed_sign_list
+                  this.card_checkList = res.data.items.card_sign_list
+                  this.opt_list = []
+                }
+              })
+            })
+          })
+        }
+    }
+</script>
+
+<style scoped lang='stylus'>
+  .actname
+    >>>.el-dialog__body
+      padding-top 10px
+    >>>.el-tabs__item
+      color #2B3A50
+    >>>.el-tabs__item.is-active
+      color #00B3DC
+    >>>.el-tabs__active-bar
+      background-color #00B3DC
+    >>>.el-checkbox__input.is-checked .el-checkbox__inner
+      background-color #00B3DC
+      border-color #00B3DC
+    >>>.el-checkbox__input.is-checked+.el-checkbox__label
+      color #2B3A50
+   /* >>>.el-checkbox__input .el-checkbox__inner
+      background-color #00B3DC
+      border-color #00B3DC*/
+  .el-tabs
+    &>>>.el-tabs__nav-wrap
+      &:after
+        position static
+  .bed_checkList
+    ul
+      overflow hidden
+      li
+        float left
+        width 20%
+        line-height 60px
+  .application
+    background-color #00B3DC
+    padding 13px 60px
+    border none
+    color #FFFFFF
+</style>

@@ -1,0 +1,134 @@
+<!--<template>-->
+  <!--<div class='line2'>-->
+    <!--<svg style='width: 755px;height:90px'>-->
+      <!--<circle :cx="item.x" :cy="item.y" r="5" fill="" stroke="" v-for='item of spotArr'/>-->
+      <!--<line :x1="item.x1" :y1="item.y1" :x2="item.x2" :y2="item.y2" stroke="black" stroke-width="2" v-for='item of lineArr'/>-->
+    <!--</svg>-->
+  <!--</div>-->
+<!--</template>-->
+
+<!--<script>-->
+  <!--export default {-->
+    <!--name: "brokenLine5",-->
+
+    <!--props:['sign'],-->
+
+    <!--data(){-->
+      <!--return{-->
+        <!--spotArr:[],-->
+        <!--lineArr:[]-->
+      <!--}-->
+    <!--},-->
+
+    <!--mounted(){-->
+      <!--this.$nextTick(()=>{-->
+        <!--let arr = []-->
+        <!--this.sign.items.forEach(index=>{-->
+          <!--for(var k in index){-->
+            <!--var obj = {}-->
+            <!--index[k].forEach(item=>{-->
+              <!--item.VS_CODE == "P10100" ? obj.value = item.VS_VALUE : null-->
+            <!--})-->
+            <!--arr.push(obj)-->
+          <!--}-->
+        <!--})-->
+        <!--arr.forEach((item,index)=>{-->
+          <!--item.x = 27*(index+0.5)-->
+          <!--item.value == '' || item.value == null ? null : item.y = (10 - item.value) / 2 * 15 + 7.5-->
+          <!--item.y ? this.spotArr.push(item) : null-->
+        <!--})-->
+        <!--this.spotArr.forEach((item,i)=>{-->
+          <!--if(i==this.spotArr.length-1){-->
+
+          <!--}else{-->
+            <!--this.lineArr.push({ x1 : item.x , y1 : item.y, x2 : this.spotArr[i+1].x , y2 : this.spotArr[i+1].y })-->
+          <!--}-->
+        <!--})-->
+
+      <!--})-->
+    <!--}-->
+  <!--}-->
+<!--</script>-->
+
+<!--<style scoped lang='stylus'>-->
+  <!--.line2-->
+    <!--position absolute-->
+    <!--left 93px-->
+    <!--top 769px-->
+<!--</style>-->
+
+
+
+
+<template>
+  <div class='line2'>
+    <svg style='width: 755px;height:90px'>
+
+      <line :x1="item.x1" :y1="item.y1" :x2="item.x2" :y2="item.y2" stroke="black" stroke-width="2" v-for='item of lineArr'/>
+      <template v-for='item of spotArr'>
+        <circle :cx="item.x" :cy="item.y" r="5" fill="" stroke=""  v-if='item.type==""'/>
+        <g style="font-size: 18pt;">
+          <text :x="item.x-5" :y="item.y+6" font-size="30" style="fill:black" v-if='item.type==1'><tspan style='font-size: 16px;'>△</tspan></text>
+          <text :x="item.x-5" :y="item.y+6" font-size="30" style="fill:black" v-if='item.type==2'><tspan style='font-size: 20px;'>×</tspan></text>
+          <text :x="item.x-5" :y="item.y+4" font-size="30" style="fill:black" v-if='item.type==3'><tspan style='font-size: 12px;'>⊙</tspan></text>
+          <text :x="item.x-5" :y="item.y+6" font-size="30" style="fill:black" v-if='item.type==4'><tspan style='font-size: 16px;'>▼</tspan></text>
+          <text :x="item.x-5" :y="item.y+6" font-size="30" style="fill:black" v-if='item.type==5'><tspan style='font-size: 22px;'>○</tspan></text>
+          <text :x="item.x-5" :y="item.y+6" font-size="30" style="fill:black" v-if='item.type==6'><tspan style='font-size: 16px;'>◎</tspan></text>
+          <text :x="item.x-5" :y="item.y+4" font-size="30" style="fill:black" v-if='item.type==7'><tspan style='font-size: 12px;'>※</tspan></text>
+        </g>
+
+      </template>
+    </svg>
+  </div>
+</template>
+
+<script>
+  export default {
+    name: "brokenLine5",
+
+    props:['sign'],
+
+    data(){
+      return{
+        spotArr:[],
+        lineArr:[]
+      }
+    },
+
+    mounted(){
+      this.$nextTick(()=>{
+        let arr = []
+        this.sign.items.forEach(index=>{
+          for(var k in index){
+            var obj = {}
+            index[k].forEach(item=>{
+              item.VS_CODE == "P10100" ? obj.value = item.VS_VALUE : null
+              item.VS_CODE == "P10101" ? obj.type = item.VS_VALUE : null
+            })
+            arr.push(obj)
+          }
+        })
+        arr.forEach((item,index)=>{
+          item.x = 18*(index+0.5)
+          item.value == '空' || item.value == '' || item.value == null ? null : item.y = (10 - item.value) / 2 * 15 + 7.5
+          item.y ? this.spotArr.push(item) : null
+        })
+        this.spotArr.forEach((item,i)=>{
+          if(i==this.spotArr.length-1){
+
+          }else{
+            this.lineArr.push({ x1 : item.x , y1 : item.y, x2 : this.spotArr[i+1].x , y2 : this.spotArr[i+1].y })
+          }
+        })
+
+      })
+    }
+  }
+</script>
+
+<style scoped lang='stylus'>
+  .line2
+    position absolute
+    left 93px
+    top 744px
+</style>

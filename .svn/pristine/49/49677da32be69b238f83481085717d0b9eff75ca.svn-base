@@ -1,0 +1,195 @@
+<template>
+  <div>
+    <div class="out-top">
+      <el-input type="search" placeholder="搜索标题" v-model='va'/>
+      <el-select v-model="department" filterable placeholder="选择科室">
+        <el-option
+          v-for="item in restaurants"
+          :key="item.ID"
+          :label="item.value"
+          :value="item.ID">
+        </el-option>
+      </el-select>
+      <el-button type='primary' @click="pageAjax()">搜索</el-button>
+      <el-button type='success' @click="showSub">新增</el-button>
+    </div>
+
+    <div class="out-main">
+      <el-table :data="LIST" style="width: 100%">
+        <el-table-column prop="ID" label="ID" min-width="80"></el-table-column>
+        <el-table-column prop="NAME" label="模板标题" min-width="200"></el-table-column>
+        <el-table-column label="模版编码" min-width="100" prop='TEMPLATE_CODE'></el-table-column>
+        <el-table-column label="关联科室" min-width="100" prop='DEPARTMENT_NAME'></el-table-column>
+        <el-table-column label="添加时间" min-width="150">
+          <template slot-scope="{row}">
+            <span>{{ row.UPDATED_AT | stampTotime }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="OPERATOR" label="操作人" min-width="100"></el-table-column>
+        <el-table-column  label="操作" min-width="420">
+          <template slot-scope="{row}">
+            <el-button  type="text" size="small" @click='stronge(row.ID,row.DEPARTMENT_ID,2)' v-if='row.IS_RECORD_UNIQUE == 1 && TYPE == 2'>标记</el-button>
+            <el-button  type="text" size="small" @click='sign(row.ID,row.DEPARTMENT_ID,1)' v-if='row.IS_RECORD_UNIQUE == 2 && TYPE == 2'>取消标记</el-button>
+            <el-button  type="text" size="small" @click='preview(row.ID)'>查看</el-button>
+            <el-button  type="text" size="small" @click='edit(row.ID)'>编辑</el-button>
+            <el-button  type="text" size="small" @click='print(row.ID)'>打印样式</el-button>
+            <el-button  type="text" size="small" @click='del(row.ID)'>删除</el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+      <div class="block" style="margin:20px 0;">
+        <el-pagination
+          background
+          @current-change="handleCurrentChange"
+          :current-page="currentPage1"
+          :page-size="page_size"
+          layout="total, prev, pager, next, jumper"
+          :total="adicsCount">
+        </el-pagination>
+      </div>
+    </div>
+    <listPreview ref='listPreview'></listPreview>
+    <printSet ref='printSet'></printSet>
+    <el-dialog :visible.sync="popshow" width='600px'>
+      <el-button type='text'>是否确定标记该表单，确定后原标记将取消，记录单历史记录将不会显示</el-button>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="popshow=false">取 消</el-button>
+        <el-button @click="alertOK" type='primary'>确 定</el-button>
+      </div>
+    </el-dialog>
+  </div>
+</template>
+
+<script>
+  import listPreview from './preview/listPreview'
+  import printSet from './preview/printSet'
+  export default {
+    props : ['TYPE'],
+
+    data(){
+      return {
+        popshow : false,
+        currentPage1 : 1,
+        page_size : 20,
+        adicsCount : 0,
+        LIST : [],   //列表
+        va : "",
+        department:'',
+        restaurants : [{'value' : '全部科室' , "ID" : ''}],
+        stronges : {}
+      }
+    },
+
+    components:{ listPreview, printSet },
+
+    methods:{
+      pageAjax(){
+        this.getSer("datacenter/template" , {
+          SUBJECT : this.va,
+          TYPE : this.TYPE,
+          DEPARTMENT_ID : this.department,
+          page : this.currentPage1,
+          page_size : this.page_size
+        },res=>{
+          console.log(res)
+          if(res.status <= 400){
+            this.LIST = res.data.items;
+            this.adicsCount = parseInt(res.data.meta.totalCount);
+            console.log(this.adicsCount)
+          }
+        })
+      },
+      handleCurrentChange(val) {       //当前页变化的时候
+        this.currentPage1 = val
+        this.pageAjax();
+      },
+      showSub() {
+        this.$parent.$parent.$parent.addDynamic()
+      },
+      stronge(id, department_id, status){
+        this.popshow = true
+        this.stronges = { id , department_id , status }
+      },
+      sign(id, department_id, status){
+        this.post('datacenter/template/setdefault',{id , department_id , status},res=>{
+          console.log(res)
+          if(res.status<400){
+            this.$message({type: 'success', message: res.data.message})
+            this.popshow = false
+            this.pageAjax()
+          }
+        })
+      },
+      alertOK(){
+        this.sign(this.stronges.id, this.stronges.department_id, this.stronges.status)
+      },
+      edit(id){
+        this.$parent.$parent.$parent.edit(id)
+      },
+      print(id){
+        this.$refs.printSet.getData(id)
+        //this.$refs.printSet.getPreview(id)
+      },
+      del(id){
+        this.$confirm('是否删除该模板?', '提示', {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+        }).then(() => {
+          this._delete('datacenter/template/' + id , {id:id} , res => {
+            console.log(res)
+            if(res.status == 204){
+              this.$message({
+                type: 'success',
+                message: '删除成功!'
+              });
+              this.handleCurrentChange()
+            }
+
+          })
+        }).catch(() => {
+
+        })
+      },
+      preview(id){
+        this.$refs.listPreview.getData(id)
+      }
+    },
+    mounted() {
+      this.$nextTick(() => {
+        this.pageAjax()
+        this.getSer('datacenter/department', {page_size:1000} , res => {
+
+          console.log(res); //科室列表
+          res.data.items.forEach((item , i) => {
+            this.restaurants.push({'value' : item.NAME , "ID" : item.ID})
+          })
+        })
+      })
+    },
+  }
+</script>
+
+<style scoped lang="stylus">
+  .out-top
+    .el-input
+      width 240px
+      margin-right 10px
+      &>>>.el-input__inner
+        width 240px
+    .el-select
+      margin-right 10px
+  .el-button
+    padding 12px 12px
+  .el-button--success
+    float right
+    margin-right 0
+    background-color #11c462
+    &:hover
+      background-color #14d462
+  .el-dialog
+    .el-button--text
+      &>>>span
+        font-size 18px
+        white-space pre-wrap
+        line-height 32px
+</style>

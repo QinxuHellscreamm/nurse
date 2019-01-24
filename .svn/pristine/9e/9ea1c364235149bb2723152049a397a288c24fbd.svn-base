@@ -1,0 +1,21 @@
+<template>
+  <div style="display: flex;flex-wrap: wrap;">
+    <Node v-for="(node,index) of NODES" :nodeData='node' :key='index' :class='{"br":node.IS_NEWLINE =="1"}' ></Node>
+  </div>
+</template>
+
+<script>
+  import Node from '@/components/node'
+    export default {
+        name: "listPreviewComponent1",
+
+        props:['NODES'],
+
+        components:{Node}
+    }
+</script>
+
+<style scoped lang='stylus'>
+  .br
+    width 100%
+</style>

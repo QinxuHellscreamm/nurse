@@ -1,0 +1,284 @@
+<template>
+    <div style='padding:20px; background-color: #FFFFFF'>
+      <h1 style='font-size: 20px;text-align: center; margin: 0 0 20px'>产程图</h1>
+      <div class="from-header"style='border: none;' >
+        <div style="text-align: right;">
+          <label>科室</label>
+          <span>{{patient.DEPARTMENT}}</span>
+          <label>床号</label>
+          <span>{{patient.BED_NUMBER}}</span>
+          <p>
+            <label>住院病历号</label>
+            <span>{{INPATIENT_NUMBER}}</span>
+          </p>
+
+        </div>
+        <div>
+          <label>姓名</label>
+          <span>{{patient.NAME}}</span>
+          <label>年龄</label>
+          <span>{{patient.AGE}}</span>
+          <label>孕产</label>
+          <span>{{patient.MATERNITY}}</span>
+          <label>孕周</label>
+          <span>{{patient.GESTATIONAL_AGE}}</span>
+          <label>身高</label>
+          <span>{{patient.HEIGHT}}</span>
+          <label>体重</label>
+          <span>{{patient.WEIGHT}}kg</span>
+          <label>入院时间</label>
+          <span>{{patient.HOSPITALIZED_DATE}}</span>
+        </div>
+      </div>
+      <div>
+
+        <div  style='position: relative;height: 500px;width: 850px;' >
+          <p style="width: 24px;text-align: center;position: absolute;left: 0;top: 50px;z-index: 99;">(红)宫口扩张(cm)</p>
+          <p style="width: 24px;text-align: center;position: absolute;right: -40px;top: 50px;z-index: 99;">(篮)胎头下降(cm)</p>
+          <div id="echarts" style="height: 500px;width: 850px;" ></div>
+        </div>
+        <div style="padding: 0 0 0 70px;width: 764px;position: relative;" class="tables">
+          <table border="0" cellspacing="0" width='764' align="center">
+            <span style="position: absolute;top:20px;left: 10px">胎心音</span>
+            <span style="position: absolute;right: -50px;top:20px;">次/min</span>
+            <span style="position: absolute;top:70px;left: 10px">血压</span>
+            <span style="position: absolute;right: -50px;top:70px;">mmHg</span>
+            <span style="position: absolute;top:120px;left: 10px">宫缩</span>
+            <span style="position: absolute;top:170px;left: 10px">羊水</span>
+            <span style="position: absolute;top:280px;left: 10px">处理</span>
+            <span style="position: absolute;top:430px;left: 10px">签名</span>
+            <tbody>
+              <tr>
+                <td height='50px' v-for='item of inHospitalDays' class='red'>{{ihg}}</td>
+              </tr>
+              <tr>
+                <td height='50px' v-for='item of inHospitalDays' class='red'></td>
+              </tr>
+              <tr>
+                <td height='50px' v-for='item of inHospitalDays' class='red'></td>
+              </tr>
+              <tr>
+                <td height='50px' v-for='item of inHospitalDays' class='red'></td>
+              </tr>
+              <tr>
+                <td height='180px' v-for='item of inHospitalDays' class='red'></td>
+              </tr>
+              <tr>
+                <td height='90px' v-for='item of inHospitalDays' class='red'></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!--<table border="1" cellspacing="0" width='850' align="center">
+          <thead>
+          <tr>
+           &lt;!&ndash; <th height='20px' :colspan='6*ten' width='75' class='red'>日期</th>&ndash;&gt;
+            <th height='20px' :colspan='6*ten' width='75' v-for='item of dateFormatArr' class='red'>{{item}}</th>
+          </tr>
+          </thead>
+        </table>-->
+      </div>
+    </div>
+</template>
+<script>
+    export default{
+      props : ['INPATIENT_NUMBER'],
+        data(){
+            return {
+              patient:{},
+              dateFormatArr : [],
+              inHospitalDays:[],
+              ihg:'22',
+              dataBir:[],
+
+            }
+        },
+      methods:{
+        getData(){
+          for(let i=0;i<=30;i++){
+            this.inHospitalDays.push(i)
+          }
+          this.dataBir = []
+          this.getSer('datacenter/birthprocess',{number:this.INPATIENT_NUMBER} , res => {
+            this.patient = res.data
+          this.dataBir.push(this.patient)
+          console.log("内容",this.patient)
+          })
+
+          console.log("内222容",this.dataBir)
+
+        },
+        pageAjax(){
+          let myChart = this.echarts.init(document.getElementById('echarts'))
+          myChart.clear();
+          //请求数据response
+          myChart.setOption(this.chartInit())
+
+        },
+        chartInit(){
+          /*var xarr=[1,1,2,2,5,5,5,5,5,5,5,5]
+          var title=["一月","二月","三月","四月","五月","六月","七月","八月","九月","十月","十一月","十二月"]
+          var percentage=[2,3,4,5,6,7,8,9,0,11,12,14]
+          var growthRate=[5,5,5,8,5,8,15,25,8,5,5,15]
+          /!* this.dataForm.forEach((item , i) => {
+           xarr.push(item.item_count)
+           title.push(item.item_name)
+           percentage.push(item.item_count_percentage)
+           })*!/
+          function getTableLine(num) {
+            var list = [];
+            var bottom = 112;
+            var height = 30;
+            for (var i = 0; i < num; i++) {
+              list.push({
+                type: 'line',
+                bottom: bottom - i * height,
+                right: 40,
+                style: {
+                  fill: '#333',
+                  stroke:'#dfdfdf'
+                },
+                shape: {
+                  x1: 0,
+                  y1: 0,
+                  x2: 2000,//下划线偏离
+                  y2: 0
+                }
+              });
+            }
+            return list;
+          }
+          var lineList = getTableLine(4);//3行*/
+          var x = []
+          for(let i=0;i<=30;i++){
+            x.push(i)
+          }
+          var lineData = [ [2,1],[3,0],[4,-1],[5,2]];
+
+
+
+          return {
+            backgroundColor: '#fff',
+            //color: ['#f40e0e', "#0da0e9", "#FF00FF", "#ffffff", "#000000"],
+            legend: {
+              data: ['1', '2', '3', '4', '5', '6']
+            },
+            grid: {
+              left: '50px',
+              right: '0px',
+              bottom: '10px',
+              top: '10px',
+              containLabel: true
+            },
+            toolbox: {
+              feature: {
+                saveAsImage: {}
+              }
+            },
+            title: {
+              "left": "center",
+              y: "10",
+              subtextStyle: {
+                color:'#000',
+                fontSize:'14',
+                fontWeight:'bold'
+
+              },
+              textStyle: {
+                color: '#000'
+              }
+            },
+            tooltip: {
+              trigger: 'axis',
+              formatter:'{c}%'
+            },
+
+
+            xAxis: {
+              type: 'category',
+              //scale:true,脱离x
+              boundaryGap: false,
+              axisTick: {
+                show: false
+              },
+              axisLabel: {
+                textStyle:{
+                  color:'#000',
+
+                  fontWeight:'bold'
+
+                }
+              },
+              splitLine: { //网格线
+                show: true,
+                lineStyle: {
+                  color: ['#000'],
+                  type: 'solid'
+                }
+              },
+              data: x
+            },
+            yAxis: [{
+              type: 'value',
+              scale:true,
+              splitNumber:10,
+              min: 0,
+              max: 10,
+            },
+              {
+                type: 'value',
+                splitNumber:10,
+                min: -5,
+                max: 5,
+
+                position: 'right',
+              }],
+            series: [{
+              name: '剩余额度',
+              type: 'line',
+              smooth: true,//弧线
+              showSymbol: false,
+              color: ["#f40e0e"],
+              data: [[2,4],[3,3],[4,5]],
+
+            },{
+              name:'增长率',
+              yAxisIndex: 1,
+              type: 'line',
+              showSymbol: false,//去掉圆
+              smooth: true,//弧线
+              color: ['#0da0e9'],
+              data: lineData,
+
+            }]
+          };
+        },
+      },
+
+      mounted(){
+        this.$nextTick(()=>{
+         this.getData()
+         this.pageAjax()
+      })
+      },
+
+    }
+</script>
+<style scoped lang='stylus'>
+  .from-header
+    padding 10px 20px
+    border-bottom 1px solid #dddddd
+    div
+      label
+        color #878787
+      span
+        color #878787
+        margin-right 10px
+  .tables table
+    border-right 1px solid #ccc
+    border-bottom 1px solid #ccc
+    td
+      border-left 1px solid #ccc
+      border-top 1px solid #ccc
+</style>

@@ -1,0 +1,150 @@
+<template>
+    <div style="margin: 0 20px;">
+      <div class="out-top">
+        <input type="search" v-model="bed_number"  placeholder="请输入病人姓名或病案号" class="out-input">
+        <el-select v-model="advice_type" placeholder="出院日期" style="margin-left:10px">
+          <el-option
+            v-for="item in options"
+            :key="item.value"
+            :label="item.label"
+            :value="item.value">
+          </el-option>
+        </el-select>
+        <el-date-picker style="margin-left:10px"
+          v-model="start_end_time"
+          type="daterange"
+          align="right"
+          unlink-panels
+          range-separator="至"
+          start-placeholder="开始日期"
+          end-placeholder="结束日期"
+          value-format="yyyy-MM-dd"
+          :picker-options="pickerOptions2">
+        </el-date-picker>
+        <button class="btn-small" @click="getData(1,'9')">搜索</button>
+      </div>
+      <div class="out-main"  >
+        <el-table :data="outPatData" >
+          <el-table-column prop="PATIENT.BED_NUMBER" fixed label="床号" width="80"></el-table-column>
+          <el-table-column prop="PATIENT.NAME" label="姓名" width="100"></el-table-column>
+          <el-table-column prop="PATIENT.SEX" label="性别" width="80"></el-table-column>
+          <el-table-column prop="PATIENT.AGE" label="年龄" width="80"></el-table-column>
+          <el-table-column prop="PATIENT.INPATIENT_NUMBER" label="住院号" width="120"></el-table-column>
+          <el-table-column prop="PATIENT.MEDICAL_RECORD_NUM" label="病案号" width="120"></el-table-column>
+          <el-table-column prop="PATIENT.PRIMARY_DOCTOR" label="主治医生" width="100"></el-table-column>
+          <el-table-column prop="PATIENT.HOSPITALIZED_DATE" label="入院日期" width="164"></el-table-column>
+          <el-table-column prop="START_TIME" label="预出院日期" width="164"></el-table-column>
+          <el-table-column prop="END_TIME" label="出院日期" width="164"></el-table-column>
+          <el-table-column prop="PATIENT.CONTACT_NUMBER" label="电话" width="120"></el-table-column>
+          <el-table-column prop="PATIENT.WARD_NAME" label="病区" width="100"></el-table-column>
+          <el-table-column prop="PATIENT.DEPARTMENT" label="科室" width="100"></el-table-column>
+          <el-table-column prop="PATIENT.OUTHOSPITAL_DIAGNOSTIC_RESULTS" label="出院诊断" width="100"></el-table-column>
+        </el-table>
+        <div style="margin:20px 0;">
+          <el-pagination
+            background
+            @current-change="handleCurrentChange"
+            :current-page="currentPage"
+            :page-size="20"
+            layout="total, prev, pager, next, jumper"
+            :total="adicsCount">
+          </el-pagination>
+        </div>
+      </div>
+    </div>
+</template>
+<script>
+    export default{
+      data() {
+        return {
+          currentPage : 1,
+          adicsCount : 0,
+          options: [{
+            value: 'jrcy',
+            label: '出院日期'
+          }, {
+            value: 'mrcy',
+            label: '预出院日期'
+          }],
+          advice_type:'jrcy',
+          pickerOptions2: {
+            shortcuts: [{
+              text: '最近一周',
+              onClick(picker) {
+                const end = new Date();
+                const start = new Date();
+                start.setTime(start.getTime() - 3600 * 1000 * 24 * 7);
+                picker.$emit('pick', [start, end]);
+              }
+            }, {
+              text: '最近一个月',
+              onClick(picker) {
+                const end = new Date();
+                const start = new Date();
+                start.setTime(start.getTime() - 3600 * 1000 * 24 * 30);
+                picker.$emit('pick', [start, end]);
+              }
+            }, {
+              text: '最近三个月',
+              onClick(picker) {
+                const end = new Date();
+                const start = new Date();
+                start.setTime(start.getTime() - 3600 * 1000 * 24 * 90);
+                picker.$emit('pick', [start, end]);
+              }
+            }]
+          },
+          bed_number: '',
+          start_end_time: '',
+          value7: '',
+          outPatData: [
+          ]
+        };
+      },
+      mounted(){
+        this.$nextTick(()=> {
+          this.getData('',1);
+        })
+      },
+      methods: {
+            //获取列表
+         getData(){
+             let obj = {
+               'bed_number' : this.bed_number ,
+               'advice_type' : this.advice_type ,
+               'start_time' : (this.start_end_time ? this.start_end_time[0] : '') ,
+               'end_time' : (this.start_end_time ? this.start_end_time[1] : '') ,
+               'page' : this.currentPage
+             }
+             this.getSer("datacenter/outhospital", obj, (res) => {
+               if(res.status <= 400){
+                 this.adicsCount = res.data.meta.totalCount
+                 this.outPatData = res.data.items;
+               }
+             })
+           },
+         //当前页发生改变的时候
+         handleCurrentChange(val) {
+           this.currentPage = val
+           this.getData();
+         },
+      }
+    }
+</script>
+<style scoped>
+  .btn-small{
+    display:inline-block;
+    width:96px;
+    height:40px;
+    line-height:40px;
+    margin-left:20px;
+    background: #00B3DC;
+    border-radius: 4px;
+    color:#fff;
+  }
+  .out-main{
+    padding: 5px 0;
+
+  }
+
+</style>

@@ -1,0 +1,390 @@
+<template>
+   <div class='assmessment'>
+    <div class='content'>
+      <div class='left'>
+        <div class='control'>
+          <el-button type='primary' @click='print_preview'>打印</el-button>
+          <!--<el-button type='primary' @click='print'>打印</el-button>-->
+        </div>
+        <h1 style='font-size: 20px;text-align: center; margin: 0 0 20px'>{{TEMPLATE.NAME}}</h1>
+        <div class="from-header" v-if='HEADER.length'>
+          <div v-for='item of HEADER'>
+            <label>{{item.NODE_NAME}}:</label>
+            <span>{{item.VALUE.content}}</span>
+          </div>
+        </div>
+        <div class='template'>
+          <div style="display: flex;flex-wrap: wrap;">
+            <patientNode v-for="(node,index) of TEMPLATE.NODES" :nodeData='node' :key='index' :seeText="seeText" :class='{"br":node.IS_NEWLINE =="1"}' :inpatient_number='INPATIENT_NUMBER'></patientNode>
+          </div>
+          <div v-if='docType == 1' class='bottom-input'>
+            <div class='totalScore'>
+              <label>总分</label>
+              <el-input v-model='computedFraction' :disabled="seeText"></el-input>
+            </div>
+            <div>
+              <label>记录时间</label>
+              <el-date-picker :disabled="seeText" v-model="date" type="datetime" value-format='yyyy-MM-dd	HH:mm' format='yyyy-MM-dd	HH:mm' placeholder="选择日期时间"></el-date-picker>
+            </div>
+          </div>
+         <!-- <div class='bottom-button'>
+            <el-button type='primary' @click='save'>保存</el-button>
+            <el-button type='warning' @click='getData'>清空</el-button>
+          </div>-->
+        </div>
+      </div>
+      <div class='right'>
+        <h5>历史记录</h5>
+        <div class='nurse_time'>
+          <span>护理时间</span>
+          <el-date-picker v-model="nursingDate" unlink-panels type="daterange" value-format='yyyy-MM-dd' range-separator="至" start-placeholder="开始日期" end-placeholder="结束日期"></el-date-picker>
+        </div>
+        <el-table :data='tableList' border @row-contextmenu='rightClick'>
+          <el-table-column  label="时间" prop='FORM_DATE' min-width='60'></el-table-column>
+          <el-table-column  label="创建人" prop='OPERATOR_NAME' min-width='40'></el-table-column>
+        </el-table>
+      </div>
+    </div>
+     <div class="fixed" ref='fix' v-show='fixShow' @mouseout='out'>
+       <div class='edit' @click='edit'>查看</div>
+       <div @click='print_preview'>打印</div>
+      <!-- <div @click='del'>删除</div>-->
+     </div>
+      <el-dialog :visible.sync="popshow" title='预览' width='800px'>
+        <div ref="print">
+          <div v-html='content'></div>
+        </div>
+
+        <div slot="footer" class="dialog-footer">
+          <el-button @click="popshow = false">取 消</el-button>
+          <el-button type='primary' @click='print'>打印</el-button>
+        </div>
+
+      </el-dialog>
+   </div>
+</template>
+
+<script>
+  import { _debounce , _YMDhms} from "@/global"
+  import patientNode from './patientNode/patientNode'
+
+    export default {
+        name: "assessmentSheet",
+
+        components : { patientNode },
+
+        props: ['id','INPATIENT_NUMBER','docType'],
+
+        data(){
+          return{
+            date : '',
+            nursingDate : [],
+            HEADER:[],
+            TEMPLATE : {},
+            nodeValueArr : [],
+            tableList : [],
+            fixShow : false,
+            obj : {},
+            saveType : '',
+            editId : '',
+            computedFraction : 0,
+            template_answers : [],
+            content:'',
+            popshow:false,
+            seeText:false,
+            disabled:false,
+          }
+        },
+
+        methods:{
+          print(){
+            this.$print(this.$refs.print)
+          },
+          print_preview(){
+            this.getSer('datacenter/tempstyle/'+this.id, {id:this.id , form_id : this.editId, inpatient_number:this.INPATIENT_NUMBER,is_preview:1 },res=>{
+              console.log(res);
+              this.content = res.data.content
+              this.popshow = true
+            })
+          },
+          getData(){
+            this.getSer('datacenter/template/' + this.id, { id : this.id , inpatient_number : this.INPATIENT_NUMBER} , res => {
+              console.log(res)
+              this.TEMPLATE = res.data
+              this.HEADER = res.data.HEADER
+              this.template_answers = []
+              this.date = _YMDhms()
+              this.$store.state.importTemplateObj.saveType = 'post'
+              this.$store.state.importTemplateObj.importTemplateArr = []
+            this.seeText = false
+            })
+          },
+          getList(){
+            this.getSer('datacenter/questionnaire',{
+              TYPE : 1,
+              TEMPLATE_ID : this.id,
+              INPATIENT_NUMBER : this.INPATIENT_NUMBER,
+              BEGIN : this.nursingDate[0] ? this.nursingDate[0] : '',
+              END : this.nursingDate[1] ? this.nursingDate[1] : ''
+            },res=>{
+              console.log('res')
+              console.log(res)
+              this.tableList = res.data.items
+            })
+          },
+
+          save : _debounce(function(){
+            this.nodeValueArr = []
+            this.template_answers = []
+            this.recursion(this.TEMPLATE.NODES)
+            this.recursion_template_answers()
+            if(this.$store.state.importTemplateObj.saveType == 'post'){
+              console.log({
+                form_id : this.id ,
+                inpatient_number : this.INPATIENT_NUMBER ,
+                time : this.date ,
+                answers : JSON.stringify(this.nodeValueArr),
+                template_answers : JSON.stringify(this.template_answers)
+              })
+              this.post('datacenter/questionnaire' ,{
+                form_id : this.id ,
+                inpatient_number : this.INPATIENT_NUMBER ,
+                time : this.date ,
+                answers : JSON.stringify(this.nodeValueArr),
+                template_answers : JSON.stringify(this.template_answers)
+              },res => {
+                if(res.data.code < 400){
+                  this.getList()
+                  this.getData()
+                  this.$message({message: '保存成功', type: 'success'})
+                }else{
+                  this.$message({
+                    message: res.data.message,
+                    duration:1000,
+                    type: 'warning'
+                  })
+                }
+                console.log(res)
+              })
+            }
+            if(this.$store.state.importTemplateObj.saveType == 'put'){
+              this._put('datacenter/questionnaire/' + this.editId ,{
+                id : this.editId ,
+                inpatient_number : this.INPATIENT_NUMBER ,
+                time : this.date ,
+                answers : JSON.stringify(this.nodeValueArr),
+                template_answers : JSON.stringify(this.template_answers)
+              },res => {
+                if(res.data.code < 400){
+                  this.getList()
+                  this.getData()
+                  this.$message({message: '编辑成功', type: 'success'})
+                }else{
+                  this.$message({
+                    message: res.data.message,
+                    duration:1000,
+                    type: 'warning'
+                  })
+                }
+                console.log(res)
+              })
+            }
+          }),
+          recursion(arr) {
+            arr.forEach(item=> {
+              item.VALUE.qid = item.ID
+              this.nodeValueArr.push(item.VALUE)
+              item.CHILDS.length != 0 ? this.recursion(item.CHILDS) : null
+            })
+          },
+          recursion_template_answers() {
+            this.$store.state.importTemplateObj.importTemplateArr.forEach(form=>{
+              let obj = {
+                relate_qid : form.ID,
+                relate_answer : []
+              }
+              this.recursion_template_answers_callback(form.NODES,obj)
+              this.template_answers.push(obj)
+            })
+
+          },
+          recursion_template_answers_callback(NODES,obj){
+            console.log(NODES)
+            NODES.forEach(item=> {
+               item.VALUE.qid = item.ID
+               obj.relate_answer.push(item.VALUE)
+               item.CHILDS.length != 0 ? this.recursion_template_answers_callback(item.CHILDS,obj) : null
+            })
+          },
+          computedScore(arr) {
+            arr.forEach(item=> {
+              this.computedFraction += Number(item.VALUE.score)
+              item.CHILDS.length != 0 ? this.computedScore(item.CHILDS) : null
+            })
+          },
+          rightClick(obj,e){
+            console.log(obj,e)
+            e.preventDefault()
+            this.obj = obj
+            this.editId = obj.ID
+            this.fixShow = true
+            this.$refs.fix.style.left = e.clientX - 40 + 'px'
+            this.$refs.fix.style.top = e.clientY - 30 + 'px'
+            this.fixShow = true
+          },
+          edit(){
+            this.getSer('datacenter/questionnaire/' + this.obj.ID ,{ id : this.obj.ID, inpatient_number : this.INPATIENT_NUMBER },res => {
+              console.log(res)
+              if(res.status < 400){
+                this.fixShow = false
+                this.$store.state.importTemplateObj.saveType = 'put'
+                this.$store.state.importTemplateObj.importTemplateArr = []
+                this.template_answers = []
+                this.date = res.data.FORM_DATE
+                this.TEMPLATE = res.data
+                this.editId = res.data.ID
+                this.seeText = true
+              }
+              this.getSer('datacenter/tempstyle/'+this.id, {id:this.id , form_id : this.editId, inpatient_number:this.INPATIENT_NUMBER,is_preview:1 },res=>{
+                console.log(res);
+                this.content = res.data.content
+              })
+            })
+          },
+          del(){
+
+
+
+            this.$confirm('是否删除?', '警告', {confirmButtonText: '确定', cancelButtonText: '取消', type: 'warning'}).then(() => {
+              this._delete('datacenter/questionnaire/' + this.obj.ID,{ id : this.obj.ID },res => {
+                if(res.status == 204){
+                  this.$message({type: 'success', message: '删除成功!'})
+                  this.getList()
+                  this.editId == this.obj.ID ? this.getData() : null
+                }
+              })
+            }).catch(() => {
+
+            })
+
+          },
+          out(e){
+            if(e.toElement.className == 'right' || e.toElement.className == 'cell' || e.toElement.lastChild.className == 'cell') this.fixShow = false
+          }
+        },
+
+        mounted(){
+          this.$nextTick(()=>{
+            this.getData()
+            this.getList()
+          })
+        },
+
+        watch:{
+          'id':function (id) {
+            console.log(id)
+            this.TEMPLATE = ''
+            this.getData()
+            this.getList()
+          },
+          'nursingDate' : function (value) {
+            console.log(value)
+            this.getList()
+          },
+          'TEMPLATE.NODES': {
+            handler(newValue, oldValue) {
+              this.computedFraction = 0
+              newValue ? this.computedScore(newValue) : null
+            },
+            deep : true
+          }
+        }
+
+    }
+</script>
+
+<style scoped lang='stylus'>
+  .assmessment
+    height inherit
+    .control
+      padding 20px
+      text-align right
+    .content
+      display flex
+      height inherit
+      .left
+        flex 1
+        height inherit
+        .from-header
+          display flex
+          padding 10px 20px
+          border-bottom 1px solid #dddddd
+          div
+            flex 1
+            label
+            span
+              color #878787
+        .template
+          display block
+          margin 30px 20px
+          .bottom-input
+            .el-date-editor
+              margin-left 10px
+            label
+              display inline-block
+              width 4em
+              text-align right
+            margin 30px 0
+            .totalScore
+              margin-bottom 15px
+              .el-input
+                width 220px
+                margin-left 10px
+          .bottom-button
+            text-align center
+            .el-button
+              padding 12px 32px
+      .right
+        width 300px
+        height inherit
+        border-left 1px solid #D8E3E7
+        box-sizing border-box
+        padding 0 20px
+        h5
+          font-size 16px
+          line-height 60px
+          color #2B3A50
+          font-weight 500
+        .el-date-editor--daterange
+          width 188px
+          padding 3px 5px
+          margin-left 10px
+          &>>>.el-input__icon
+            display none
+          &>>>.el-range-input
+            width 45%
+          &>>>.el-range-separator
+            width 10%
+        .el-table
+          margin-top 30px
+    .fixed
+      position fixed
+      width 80px
+      height 60px
+      background-color #FFFFFF
+      border 1px solid #dddddd
+      z-index 2000
+      div
+       height 30px
+       line-height 30px
+       text-align center
+       &:hover
+         background-color #ddeff9
+      .edit
+        border-bottom 1px solid #dddddd
+  .br
+    width 100%
+
+  #printTest
+    margin-bottom 40px
+</style>

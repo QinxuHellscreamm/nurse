@@ -1,0 +1,116 @@
+<template>
+  <div style="margin: 20px 0 ;">
+    <div class="out-main">
+      <div class="out-top">
+        <label>时间</label>
+        <el-date-picker v-model="date" type="datetime" value-format='yyyy-MM-dd	HH:mm' format="yyyy-MM-dd	HH:mm" placeholder="选择日期时间"></el-date-picker>
+        <el-button type='primary' @click='save' style='margin-left: 10px;'>保存</el-button>
+      </div>
+
+      <el-table :data='people' v-if='people[0]'>
+        <el-table-column prop='BED_NUMBER' label='床位信息' width='100'>
+          <template slot-scope="{row}"><div>{{row.BED_NUMBER}}({{row.NAME}})</div></template>
+        </el-table-column>
+        <el-table-column v-for='(sign,index) of template' :label="sign.NODE_NAME" :key='index' width='70' >
+          <template slot-scope='scope'>
+            <el-input v-model='scope.row.template[index].value' size='mini' @keyup.native='keyup(scope.$index,"input_" + index,$event)' :data-index='"input_" + index'></el-input>
+          </template>
+        </el-table-column>
+        <el-table-column></el-table-column>
+      </el-table>
+    </div>
+  </div>
+</template>
+
+<script>
+  import {_YMDhms,_debounce} from "@/global";
+
+  export default {
+        name: "docSugarEntry",
+
+        data(){
+          return{
+            date : '',
+            people: [],
+            template:[]
+          }
+        },
+
+        methods:{
+          getTemplate(){
+            this.getSer("datacenter/bed",{ filterfuc : this.$store.state.bedType ,'page_size':200 , page: 1}, res => {
+              if(res.status <= 400){
+                this.people = res.data.items
+                this.getSer('/datacenter/questionnaire/tplfor-record',{},template=>{
+                  var arr = template.data.item
+                  arr.forEach(item=>{
+                    item.value = ''
+                  })
+                  this.people.forEach(item=>{
+                    item.template = JSON.parse(JSON.stringify(arr))
+                  })
+                  this.template = arr
+                })
+
+              }
+            })
+
+          },
+          keyup(rowIndex,dataIndex,ev){
+            let table = document.querySelectorAll('.el-table__body-wrapper')[0]
+            if(ev.keyCode == '40'){
+              let inputs = table.querySelectorAll('.el-table__row')[rowIndex+1].querySelectorAll('input[data-index]')
+              inputs.forEach(item=>{
+                if(item.getAttribute('data-index') == dataIndex){
+                  item.focus()
+                }
+              })
+            }else if(ev.keyCode == '38'){
+              let inputs = table.querySelectorAll('.el-table__row')[rowIndex-1].querySelectorAll('input[data-index]')
+              inputs.forEach(item=>{
+                if(item.getAttribute('data-index') == dataIndex){
+                  item.focus()
+                }
+              })
+            }
+          },
+          save:_debounce(function () {
+            var arr = []
+            this.people.forEach(item=>{
+              //只提交有数据的节点
+              item.answers = []
+              item.template.forEach(sign=>{
+                if(sign.value!=''){
+                  item.answers.push({ option:[] , content:sign.value , score:0 , vs_item_code : sign.VS_ITEM_CODE })
+                }
+              })
+              if(item.answers.length>0){
+                arr.push({"inpatient_number": item.INPATIENT_NUMBER, "answers": item.answers, template_answers:[]})
+              }
+            })
+            this.post('datacenter/questionnaire/batchadd',{ form_id:this.template[0].TEMPLATE_ID,time:this.date, from:5 ,data:JSON.stringify(arr) },res=>{
+              console.log(res)
+            })
+
+          })
+        },
+        mounted(){
+          this.$nextTick(()=>{
+            this.date =  _YMDhms()
+            this.getTemplate()
+          })
+        }
+    }
+</script>
+
+<style scoped lang='stylus'>
+  .el-table
+    &>>>.el-table__body-wrapper,&>>>.el-table__fixed-body-wrapper
+      .cell
+        padding 8px 4px
+        .flex
+          display flex
+    &>>>.el-table__header-wrapper,&>>>.el-table__fixed-header-wrapper
+      .cell
+        font-size 12px
+</style>

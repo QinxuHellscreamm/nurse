@@ -1,0 +1,185 @@
+<template>
+    <el-dialog title="新增授权" :visible.sync="dialogVisible" width="800px">
+      <div class='body'>
+        <el-form label-position="top" :model="from" :inline="true">
+          <el-form-item label="住院号">
+            <el-select v-model="from.INPATIENT_NUMBER" filterable placeholder="请选择" @change="getPatient">
+              <el-option v-for="item in patient_list" :key="item.value" :label="item.NAME" :value="item.INPATIENT_NUMBER" ></el-option>
+            </el-select>
+          </el-form-item>
+          <el-form-item label="被授权科室">
+            <el-select v-model="from.DEPARTMENT_ID" filterable placeholder="请选择" @change="getNurse">
+              <el-option v-for="item in inpatientArea" :key="item.value" :label="item.NAME" :value="item.ID" ></el-option>
+            </el-select>
+          </el-form-item>
+          <el-form-item label="被授权人">
+            <el-select v-model="from.BE_GRANT_NURSE_ID" filterable placeholder="请选择" :class="nurse_name_select" :id="nurse_name_select">
+              <el-option v-for="item in nurse" :key="item.value" :label="item.NAME" :value="item.ID" v-if="my_nurid!=item.ID"></el-option>
+            </el-select>
+          </el-form-item>
+          <el-form-item label="结束时间">
+            <el-date-picker v-model="from.END_AT" value-format="yyyy-MM-dd HH:mm:ss" type="datetime" placeholder="选择日期时间">
+            </el-date-picker>
+          </el-form-item>
+          <el-form-item label="备注" :class="form_remark">
+            <el-input v-model="from.REMARKS"></el-input>
+          </el-form-item>
+          <el-form-item label="姓名">
+            <el-input v-model="patient.NAME" readonly></el-input>
+          </el-form-item>
+          <el-form-item label="性别">
+            <el-input v-model="patient.SEX" readonly></el-input>
+          </el-form-item>
+          <el-form-item label="入院日期">
+            <el-input v-model="patient.INPATIENT_AREA_DATE" readonly></el-input>
+          </el-form-item>
+          <el-form-item label="床号">
+            <el-input v-model="patient.BED_NUMBER" readonly></el-input>
+          </el-form-item>
+          <el-form-item label="入院诊断" :class="form_remark">
+            <el-input v-model="patient.DIAGNOSTIC_RESULTS" readonly></el-input>
+          </el-form-item>
+        </el-form>
+        <div class="treelist">
+          <div class='tree'>
+            <el-tree :data="trees" show-checkbox default-expand-all node-key="ID" ref="tree" highlight-current :props="defaultProps"></el-tree>
+          </div>
+        </div>
+      </div>
+      <span slot="footer" class="dialog-footer">
+        <el-button @click="dialogVisible = false" class="diafa">取 消</el-button>
+        <el-button type="primary" @click="addNewGrant" class="diatr">确 定</el-button>
+      </span>
+    </el-dialog>
+</template>
+<script>
+  export default{
+    data(){
+      return {
+        dialogVisible : false,
+        inpatientArea : [],
+        nurse : [],
+        patient_list : [],  //病人列表
+        form_remark:'form_remark',
+        nurse_name_select:'nurse_name_select',
+        patient: {
+          NAME : '',
+          SEX : '',
+          INPATIENT_AREA_DATE : '',  //入院日期
+          BED_NUMBER : '',  //床号
+          DIAGNOSTIC_RESULTS : '',  //入院诊断
+        },
+        from : {
+          INPATIENT_NUMBER : '',
+          BED_NUMBER : '',
+          DEPARTMENT_ID : '',
+          BE_GRANT_NURSE_ID : '',
+          BE_GRANT_NURSE : '',
+          END_AT : '',
+          REMARKS : '',
+          NURSEDOC_IDS : '',
+        },
+        trees:[],
+        defaultProps: { //tree 组件 定义默认字段
+            children: 'CHILDS',
+            label: 'TITLE'
+        },
+        my_nurid : ''
+      }
+    },
+
+    methods:{
+      init(){
+        this.dialogVisible = true
+      },
+      getPatient(){
+        this.getSer('datacenter/patient',{INPATIENT_NUMBER : this.from.INPATIENT_NUMBER}, res=>{
+            this.patient = res.data.items[0];
+          console.log(this.patient);
+            this.getSer('datacenter/menu/get-document-menu',{pati_id : this.patient.ID, is_for_grant : 1}, res=>{
+              console.log(res);
+              this.trees = res.data
+            })
+        })
+      },
+      getNurse() {
+          this.from.BE_GRANT_NURSE_ID = '';
+          this.getSer('datacenter/nurse',{department_id:this.from.DEPARTMENT_ID}, res=>{
+              this.nurse = res.data.items;
+          })
+      },
+
+      addNewGrant(){
+        this.from.NURSEDOC_IDS = this.$refs.tree.getCheckedKeys()
+          var arr=[]
+          this.from.NURSEDOC_IDS.forEach(item=>{
+              console.log(item);
+              if(item!=null) arr.push(item)
+          })
+          this.post('datacenter/grantpatient',{...this.from,NURSEDOC_IDS:JSON.stringify(arr)}, res => {
+              if(res.status<400){
+                  this.$message({type: 'success', message: '新增成功!'})
+                  this.dialogVisible = false
+              }
+          })
+      }
+    },
+
+
+    created(){
+      this.$nextTick(() => {
+        this.my_nurid = decodeURIComponent(this.getCookieVal("nurse_id"))
+        this.getSer('datacenter/department',{}, res=>{
+          this.inpatientArea = res.data.items;
+            this.getSer("datacenter/bed",{ filterfuc : 'in_hospital_bed_count' , page_size : 1000 , page : 1 , is_onlyprimary : 0, inpatient_number : '' }, res => {
+            this.patient_list = res.data.items
+          })
+        })
+      })
+    },
+  }
+</script>
+<style scoped lang='stylus'>
+  .el-dialog
+    .body
+      display flex
+  .treelist
+    .tree
+      width 290px
+      border 1px solid #D8E3E7
+      border-radius 4px
+      margin-bottom 22px
+      height 494px
+      max-height 494px
+      overflow auto
+    &>>> ::-webkit-scrollbar
+      height 7px
+      width 7px
+    &>>>  ::-webkit-scrollbar-track
+      background-color #dff4f9
+    &>>>  ::-webkit-scrollbar-thumb
+      background-color #00B3DC
+      border-radius 10px
+  .el-form >>> .el-form-item__label
+    line-height 1
+  .el-form
+    flex 1
+    >>>.el-input__inner
+      background #F9F9FB
+    .el-select
+      width 202px
+    .el-date-editor
+      width 200px
+  .form_remark
+    width 400px
+  .diafa
+    background #DDEFF9
+    color #00B3DC
+    border-color #DDEFF9
+    padding 12px 20px !important
+  .diatr
+    background-color #00B3DC
+    border-color #00B3DC
+    padding 12px 20px !important
+
+</style>

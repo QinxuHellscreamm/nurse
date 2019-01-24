@@ -1,0 +1,88 @@
+<template>
+    <div class='main-page'>
+      <div class="out-top"></div>
+        <el-tabs>
+          <el-tab-pane :label="LIST[0].TITLE" v-if='LIST[0]' key='admin'>
+            <temperature :tpl='LIST[0].ID'></temperature>
+          </el-tab-pane>
+          <el-tab-pane :label="item.TITLE" v-for='(item,index) of LIST' v-if='index > 0' :key='index'>
+            <other-sign-item :tpl='LIST[index].ID' :TITLE='{"TITLE":LIST[index].TITLE}' :signList='signList' :key='index'></other-sign-item>
+          </el-tab-pane>
+          <el-tab-pane label="自定义" v-if='LIST[0]'>
+            <custom-sign-item :signList='signList'></custom-sign-item>
+          </el-tab-pane>
+        </el-tabs>
+    </div>
+</template>
+
+<script>
+  import temperature from './signItem/temperature' //体温
+  import otherSignItem from './otherSignItem/otherSignItem' //体温
+  import customSignItem from './customSignItem/customSignItem' //自定义
+    export default {
+
+        name: "batchEntryOfSigns",
+
+        components : { temperature , customSignItem , otherSignItem },
+
+        data(){
+          return{
+            LIST : [],
+            signList:[]
+          }
+        },
+
+        methods : {
+          getTabData(){
+            this.getSer('datacenter/vs-nurse-template', { status:'ALL', page : 1 ,'per-page':100 } , res =>{
+              console.log(res)
+              this.LIST = res.data.items
+            })
+          },
+        },
+
+        mounted(){
+          this.$nextTick(()=>{
+            this.getSer('datacenter/vs',{ page : 1 , page_size : 1000 ,isparent : 1},res=>{
+              console.log(res)
+              let arr = []
+              res.data.items.forEach(item=>{
+                 if(item.TIMES_SLICE_LOCK == 2){
+                    arr.push(item)
+                 }else{
+
+                 }
+              })
+              this.signList = arr
+            })
+            this.getTabData()
+          })
+        }
+    }
+</script>
+
+<style scoped lang='stylus'>
+  .main-page
+    margin 0 20px
+    .el-tabs
+      &>>>.el-tabs__item
+        background-color #DDEFF9
+        line-height 40px
+        padding 0 42px
+        margin-left 10px
+        font-size 16px
+        border-radius 4px 4px 0 0
+      &>>>.is-active
+        background-color #FFFFFF
+        color #666
+      &>>>.el-tabs__active-bar
+        display none
+      &>>>.el-tabs__nav-wrap:after
+        display none
+      &>>>.el-tabs__header
+        margin 0
+      &>>>.el-tabs__content
+        background-color #FFFFFF
+        min-height 660px
+        border-radius 4px 4px 0 0
+</style>

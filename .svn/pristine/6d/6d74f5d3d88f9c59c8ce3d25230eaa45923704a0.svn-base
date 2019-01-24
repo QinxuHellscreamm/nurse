@@ -1,0 +1,235 @@
+<template>
+    <div>
+      <div class="out-top">
+        <span>时间</span>
+        <el-date-picker
+          v-model="start_end_time"
+          type="datetimerange"
+          value-format='yyyy-MM-dd	HH:mm'
+          format="yyyy-MM-dd	HH:mm"
+          range-separator="至"
+          start-placeholder="开始日期"
+          end-placeholder="结束日期">
+        </el-date-picker>
+        <span>病区</span>
+        <el-select v-model="department" filterable placeholder="病区" @change="getID">
+          <el-option
+            v-for="item in wardTes"
+            :key="item.ID"
+            :label="item.NAME"
+            :value="item">
+          </el-option>
+        </el-select>
+        <el-button type='primary' @click="pageAjax()">搜索</el-button>
+      </div>
+      <div style="font-size: 0;margin-bottom: 50px;">
+        <div style="width: 28%;display: inline-block;margin-left: 2%;">
+          <el-table
+            :data="dataForm"
+            border
+            style="">
+            <el-table-column
+              prop="item_name"
+              label="不良事件类型">
+            </el-table-column>
+            <el-table-column
+              prop="item_count"
+              label="例数">
+            </el-table-column>
+            <el-table-column
+              prop="item_count_percentage"
+              label="比例">
+            </el-table-column>
+          </el-table>
+        </div>
+        <div style="display: inline-block;width: 70%;">
+          <div id="echarts" style="height: 327px;" ></div>
+        </div>
+      </div>
+
+
+    </div>
+</template>
+<script>
+  export default{
+      data(){
+          return {
+            /*date: new Date()*/
+            start_end_time: [],
+            end_time : "",
+
+            department:'',
+            department_id:"",
+            role_rank:"",
+            type:'EVENT_TYPE',
+            restaurants:[],
+            wardTes:[],
+            strF:'',
+            str:'',
+            dataForm:[],
+            dataechar:'',
+            progressList:[
+              {actualAmount:44},
+              {actualAmount:33},
+              {actualAmount:23,},
+              {actualAmount:42,},
+            ],
+
+            total:"55",
+          }
+      },
+
+      mounted() {
+        this.$nextTick(() => {
+          this.dataTime()
+          this.ward()
+          this.pageAjax()
+
+      })
+      },
+
+    methods:{
+      dataTime(){
+        let date = new Date()
+        let y = date.getFullYear()
+        let m = date.getMonth() + 1 > 9 ? date.getMonth() + 1 : '0'+ (date.getMonth() + 1)
+        let d = date.getDate()
+        d = d < 10 ? ('0' + d) : d;
+        let h = date.getHours();
+        h = h < 10 ? ('0' + h) : h;
+        let mi = date.getMinutes();
+        mi = mi < 10 ? ('0' + mi) : mi;
+        let se = date.getSeconds();
+        se = se < 10 ? ('0' + se) : se;
+        this.strF = y + '-' + '01' + '-' + '01' + " " + '00' + ":" + '00'
+        this.str = y + '-' + m + '-' + d + " " + h + ":" + mi
+        this.start_end_time.push(this.strF,this.str);
+        this.start_end_time[0]=this.strF;
+        this.start_end_time[1]=this.str;
+      },
+      ward(){
+          this.role_rank = decodeURIComponent(this.getCookieVal("role_rank"))
+        this.getSer("datacenter/ward/forinfaust" ,{}, (res) => {
+          if(res.status <= 400){
+          this.wardTes = res.data;
+          console.log(this.wardTes);
+        }
+
+       // console.log("手术室",this.wardTes)
+      })
+      },
+      getID(item){
+        this.department = item.NAME
+        this.department_id = item.ID
+      },
+      pageAjax(){
+        let myChart = this.echarts.init(document.getElementById('echarts'))
+        myChart.clear();
+        //请求数据response
+        this.getSer("datacenter/infaustevent/count" ,{
+          item:this.type,
+          ward_id:this.department_id,
+          start_time: (this.start_end_time ? this.start_end_time[0] : '') ,
+          end_time: (this.start_end_time ? this.start_end_time[1] : '') ,
+        }, (res) => {
+          this.dataForm = res.data.data
+        this.dataForm=this.dataForm.reverse()
+          this.dataechar = res.data.data
+          let allcon = res.data.count_all
+        this.dataForm.push({ item_count:allcon,item_count_percentage:'100%',item_name:"总数"})
+        myChart.setOption(this.chartInit())
+
+      })
+
+
+      },
+
+      chartInit(){
+        var xarr=[]
+        var title=[]
+        var percentage=[]
+        this.dataechar.forEach((item , i) => {
+          xarr.push(item.item_count)
+          title.push(item.item_name)
+          percentage.push(item.item_count_percentage)
+        })
+        xarr.splice(xarr.length-1,1);
+        xarr.reverse();
+        console.log("asdadad",xarr)
+        return {
+          color: ['#00CACF'],
+          grid: {
+            left: 0,
+            right: '4%',
+            bottom: 13,
+            top:0,
+            containLabel: true
+          },
+          xAxis: {
+            type: 'value',
+            scale:true ,
+            minInterval: 1,
+            axisLine: {
+              onZero:false,
+              lineStyle:{
+                color:'#D1D1D1'
+              }
+            },
+            axisLabel: {
+              formatter: '  {value}',
+              textStyle: {
+                //color: '#fff',
+                fontWeight: '80'
+              }
+            }
+          },
+          yAxis: {
+            type: 'category',gridIndex: 0,
+            splitLine:{show:true,lineStyle:{color:'#DBE0E5',width:2}},
+            axisLabel: {
+              show: true,
+              inside: false,
+              textStyle: {
+                fontWeight: 'normal',
+                fontSize: '12',
+                color:"#666"
+              }
+            },
+            axisLine: {
+              onZero:false,
+              lineStyle:{
+                color:'#D1D1D1'
+              }
+            },
+          },
+          series: [{
+            type: 'bar',
+            barWidth : 10,
+            data: xarr
+          }]
+        };
+      },
+    },
+    }
+</script>
+<style scoped lang="stylus">
+  .out-top >>> .el-input__inner
+    background #fff
+  .out-top
+    .el-input
+      width 240px
+      margin-right 10px
+      &>>>.el-input__inner
+        width 240px
+    .el-select
+      margin-right 10px
+  .el-table >>>.el-table__body-wrapper tr td
+    padding 0
+    div
+      font-size 12px
+      padding 5px 4px 4px
+  .el-table >>>.el-table__header-wrapper tr th
+    padding 4px 0
+  .el-button
+    padding 12px 32px
+</style>

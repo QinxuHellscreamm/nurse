@@ -1,0 +1,121 @@
+<template>
+  <el-dialog :visible.sync="popshow" title='预览' width='1200px'>
+    <el-date-picker v-model="begin_print" type="date" value-format="yyyy-MM-dd" @change='getPage' placeholder="选择日期"></el-date-picker>
+    <el-date-picker v-model="end_print" type="date" @change='getPage' value-format="yyyy-MM-dd" placeholder="选择日期"></el-date-picker>
+    <div ref='print' style='width: 100%'>
+      <h1>{{TEMPLATE_NAME}}</h1>
+      <div class="from-header" style='border: none;' v-if='HEADER2.length'>
+        <div v-for='item of HEADER2'>
+          <label>{{item.NODE_NAME}}:</label>
+          <span>{{item.VALUE}}</span>
+        </div>
+      </div>
+      <div class="from-header" v-if='HEADER.length'>
+        <div v-for='item of HEADER'>
+          <label>{{item.NODE_NAME}}:</label>
+          <span>{{item.VALUE}}</span>
+        </div>
+      </div>
+      <div class='no-out-main'>
+        <el-table :data='LIST'>
+          <el-table-column :label="item.NODE_NAME"  :prop='item.ID' min-width="80" v-for='(item,index) of tables' :key='index' :width='item.INPUT_MODE == 2 ? 400 : ""'>
+            <el-table-column v-for='item1 of item.CHILD' :label="item1.NODE_NAME" :prop='item1.ID' :key='item1.ID'>
+              <el-table-column v-for='item2 of item1.CHILD' :label="item2.NODE_NAME" :prop='item2.ID' :key='item2.ID' >
+                <el-table-column v-for='item3 of item2.CHILD' :label="item3.NODE_NAME" :prop='item3.ID' :key='item3.ID'></el-table-column>
+              </el-table-column>
+            </el-table-column>
+          </el-table-column>
+        </el-table>
+      </div>
+    </div>
+    <el-pagination background @current-change="handleCurrentChange" :current-page="PAGE" :page-size="15" layout="total, prev, pager, next, jumper" :total="items" style='margin-top: 20px;'></el-pagination>
+    <div slot="footer" class="dialog-footer">
+      <el-button @click="popshow = false">取 消</el-button>
+      <el-button type='primary' @click='print'>打印</el-button>
+    </div>
+  </el-dialog>
+</template>
+
+<script>
+    export default {
+        name: "recordPrintPreview",
+
+        props : ['TEMPLATE_NAME','HEADER','HEADER2','INPATIENT_NUMBER','id','items'],
+
+        data(){
+          return{
+            popshow:false,
+            tables : [],
+            LIST:[],
+            begin_print:'',
+            end_print:'',
+            PAGE:1,
+          }
+        },
+
+        methods:{
+          getPage(){
+            this.popshow = true
+            this.tables = []
+            this.getSer('datacenter/questionnaire',{
+              TYPE : 2 ,
+              TEMPLATE_ID : this.id ,
+              INPATIENT_NUMBER : this.INPATIENT_NUMBER ,
+              BEGIN : this.begin_print,
+              END : this.end_print,
+              PAGE:this.PAGE,
+              PER_PAGE:15
+            },res=>{
+              console.log(res);
+              this.tables = res.data.tables
+              this.LIST = res.data.items
+            })
+          },
+          handleCurrentChange(val) {       //当前页变化的时候
+            this.PAGE = val
+            this.getPage()
+          },
+          print(){
+            strBodyStyle=''
+            strBodyHtml=''
+            var LODOP = this.$getLodop()
+            var strBodyStyle="<style>h1{font-size: 60px;text-align:center} td {border: 1px solid #000;min-width: 80px;text-align:center;font-size: 25px;} th{border: 1px solid #000;min-width: 80px;text-align:center;font-size: 25px;} .gutter{display: none} .from-header{display:flex;padding:10px 20px;font-size: 22px;} .from-header div{flex:1;}</style>";
+            var strBodyHtml = strBodyStyle+"<body>"+this.$refs.print.innerHTML+"</body>";
+
+            LODOP.PRINT_INIT("打印控件功能演示_Lodop功能_表单一")
+            LODOP.SET_PRINT_PAGESIZE(2,'','','a4')
+            LODOP.ADD_PRINT_HTML(20,20,'100%','100%',strBodyHtml)//xx ←边距 xx height
+            LODOP.SET_PRINT_MODE("PRINT_PAGE_PERCENT","Auto-Width");
+            LODOP.SET_SHOW_MODE("LANDSCAPE_DEFROTATED",1)
+
+            LODOP.PREVIEW();
+          },
+        },
+    }
+</script>
+
+<style scoped lang='stylus'>
+  h1
+    font-size 20px
+    text-align center
+    margin 0 0 20px
+  .el-table
+    &>>>.el-table__header-wrapper,&>>>.el-table__body-wrapper
+      .cell
+        font-size 12px
+        text-align center
+    &>>>.el-table__header-wrapper
+      thead
+        th
+          border-bottom 1px solid #ebeef5
+          text-align center
+  .from-header
+    display flex
+    padding 10px 20px
+    border-bottom 1px solid #dddddd
+    div
+      flex 1
+      label,span
+        color #878787
+        font-size 12px
+</style>

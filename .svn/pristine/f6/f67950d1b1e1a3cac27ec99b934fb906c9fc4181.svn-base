@@ -1,0 +1,149 @@
+<template>
+  <div>
+    <div class='function'>
+      <el-button class='refresh' @click='reload'><i class='el-icon-refresh'></i><span>刷新</span></el-button>
+      <el-input class='serch' placeholder="请输入姓名" v-model='serch_value'></el-input>
+      <el-button class='serch-btn' @click='serch'>搜索</el-button>
+      <!--<el-checkbox v-model="own">只看责任床</el-checkbox>-->
+      <span class='function-right'>
+        <el-radio-group v-model="type" @change='radioChange'>
+          <el-radio label="card">卡片显示</el-radio>
+          <el-radio label="list">列表显示</el-radio>
+        </el-radio-group>
+        <el-button class='setting' @click='$refs.setting.popshow = true'>
+          <i class='el-icon-setting'></i>
+          <span>设置</span>
+        </el-button>
+      </span>
+    </div>
+    <div class='content'>
+      <transition name='el-zoom-in-center'>
+        <cardShow v-show='type == "card"' ref='card'></cardShow>
+      </transition>
+      <transition name='el-zoom-in-center'>
+        <listShow v-show='type == "list"' ref='list'></listShow>
+      </transition>
+    </div>
+    <setting ref='setting'></setting>
+  </div>
+</template>
+
+<script>
+import cardShow from './cardShow'
+import listShow from './listShow'
+import setting from './setting'
+    export default {
+        name: "inPatients",
+
+        components : { cardShow , listShow , setting},
+
+        data(){
+            return{
+              own : false,
+              type : 'card',
+              bedType : this.$store.state.bedType,
+              serch_value : ''
+            }
+        },
+
+        methods : {
+          radioChange(label){
+            this.$store.state.showType = label
+            this.type = label
+          },
+          serch(){
+            this.$refs['card'].currentPage = 1
+            this.$refs['list'].currentPage = 1
+            this.$refs['card'].serch_value = this.serch_value
+            this.$refs['list'].serch_value = this.serch_value
+            this.$refs['card'].getData()
+            this.$refs['list'].getData()
+          },
+          reload(){
+              const loading = this.$loading({
+                  lock: true,
+                  text: 'Loading',
+                  spinner: 'el-icon-loading',
+                  background: 'rgba(0, 0, 0, 0.7)'
+              });
+            this.$refs[this.type].currentPage = 1
+            this.$refs[this.type].serch_value = ''
+            this.serch_value = ''
+            this.$refs[this.type].getData()
+            this.$parent.$refs.bar.getData()
+              setTimeout(() => {
+                  loading.close();
+              }, 2000);
+          }
+        },
+
+    }
+</script>
+
+<style scoped lang='stylus'>
+  .containe
+    background-color #E6EBF0
+  .function
+    line-height 77px
+    padding 0 16px 0 10px
+    .refresh
+      background-color #11C462
+      color #FFFFFF
+      padding 10px 15px 10px 36px
+      border none
+      position relative
+      span
+        font-size 16px
+      i
+        font-size 22px
+        position absolute
+        left 15px
+        top 7px
+    .serch
+      width 280px
+      margin-left 20px
+      &>>>.el-input__inner
+        height 36px
+    .serch-btn
+      padding 11px 20px
+      margin-left 5px
+      background-color #00B3DC
+      border none
+      color #FFFFFF
+    .el-checkbox
+      margin-left 15px
+      &>>>.el-checkbox__inner
+        width 20px
+        height 20px
+        &::after
+          height 7px
+          left 7px
+          top  4px
+      &>>>.el-checkbox__input.is-checked .el-checkbox__inner
+        background-color #00CACF
+        border-color #00CACF
+    .function-right
+      float right
+      margin-right 30px
+      &>>> .el-radio-group .is-checked
+        .el-radio__input.is-checked .el-radio__inner
+          border-color #00CACF
+          background #00CACF
+        .el-radio__label
+          color #606266
+      .el-radio+.el-radio
+        margin-left 15px
+      .setting
+        background-color #00B2DE
+        padding 10px 15px 10px 30px
+        position relative
+        border none
+        margin-left 10px
+        color #ffffff
+        .el-icon-setting
+          position absolute
+          left 10px
+          font-size 20px
+          top 7px
+          color #ffffff
+</style>

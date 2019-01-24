@@ -1,0 +1,452 @@
+<template>
+  <el-dialog :visible.sync="popshow" :width='(title == "新增护理计划")?"1000px":"730px"' :title='title' >
+    <div  style="display: inline-block;width: 240px;padding: 10px; border: 1px solid #D8E3E7;    vertical-align: top;"  v-if='title == "新增护理计划" '>
+      <el-input
+        placeholder="输入关键字进行过滤"
+        v-model="filterText">
+      </el-input>
+      <div class="treeList">
+        <el-tree
+          class="filter-tree"
+          :data="options"
+          :props="defaultProps"
+          default-expand-all
+          @node-click="handleNodeClick"
+          :filter-node-method="filterNode"
+          ref="tree">
+        </el-tree>
+      </div>
+
+    </div>
+    <div style="display: inline-block;width: 690px;">
+      <div class='dis-name'>
+        <label>疾病名称</label>
+        <el-input readonly v-model='editData.DIS_NAME'></el-input>
+      </div>
+      <div >
+        <div class='expect' >
+          <div class="btn-box">
+            <el-button type='text'>预期目标</el-button>
+            <el-button class='icon-btn' @click='deleteTarget'><i class='el-icon-delete'></i></el-button>
+            <el-button class='icon-btn' @click='target_current = target_current_class'><i class='el-icon-edit'></i></el-button>
+            <el-button class='icon-btn' @click='addTarget'><i class='el-icon-circle-plus-outline'></i></el-button>
+          </div>
+          <ul >
+            <li v-for='(item,index) of editData.TARGET' :key='index'>
+              <div :class="{'target_current': target_current_class == index}" @click='focusTargetDiv(index)' v-if='index != target_current' :key='index'>{{ item.TARGET }}</div>
+              <el-input v-if='target_current == index' v-model='item.TARGET' @blur='inpuBlur(item.TARGET) '></el-input>
+              <!--<p>{{editData.TARGET.TARGET}}</p>-->
+            </li>
+          </ul>
+        </div>
+      </div>
+<!--      <div v-else>
+        <div class='expect' >
+          <div class="btn-box">
+            <el-button type='text'>预期目标</el-button>
+            <el-button class='icon-btn' @click='deleteTarget'><i class='el-icon-delete'></i></el-button>
+            <el-button class='icon-btn' @click='target_current = target_current_class'><i class='el-icon-edit'></i></el-button>
+            <el-button class='icon-btn' @click='addTarget'><i class='el-icon-circle-plus-outline'></i></el-button>
+          </div>
+          <ul>
+            <li v-for='(item,index) of editData.TARGET' :key='index'>
+              <div :class="{'target_current': target_current_class == index}" @click='focusTargetDiv(index)' v-if='index != target_current' :key='index'>{{ item.TARGET }}</div>
+              <el-input v-if='target_current == index' v-model='item.TARGET' @blur='target_current = -1'></el-input>
+            </li>
+          </ul>
+        </div>
+      </div>-->
+
+      <div >
+        <div class="stage" v-if='editData.STAGE.length'>
+          <el-button type='text'>护理路径</el-button>
+          <ul class='stage-list'>
+            <li v-for='(item,index) of editData.STAGE' class='tab' @click='currentTab = index' :class='{"current-tab": currentTab == index}' v-if='editData.STAGE.length>0'>{{ item.STAGE_NUMBER | romeNumber }}</li>
+            <li><el-button @click='addStage'><i class='el-icon-plus'></i></el-button></li>
+          </ul>
+          <ul class='stage_view'>
+            <stageView v-for='(item,index) of editData.STAGE' v-show='currentTab == index' :key='index' :stage='item' :title="title" v-on:childByValue="childByValue" v-on:childthaValue="childthaValue"></stageView>
+          </ul>
+        </div>
+      </div>
+
+   <!--   <div v-else>
+        <div class="stage" v-if='editData.STAGE.length'>
+          <el-button type='text'>护理路径</el-button>
+          <ul class='stage-list'>
+            <li v-for='(item,index) of editData.STAGE' class='tab' @click='currentTab = index' :class='{"current-tab": currentTab == index}' v-if='editData.STAGE.length>0'>{{ item.STAGE_NUMBER | romeNumber }}</li>
+            <li><el-button @click='addStage'><i class='el-icon-plus'></i></el-button></li>
+          </ul>
+          <ul class='stage_view'>
+            <stageView v-for='(item,index) of editData.STAGE' v-show='currentTab == index' :key='index' :stage='item' ></stageView>
+          </ul>
+        </div>
+      </div>-->
+
+
+    </div>
+    <div slot="footer"  class="dialog-footer">
+      <el-button @click="popshow = false">取 消</el-button>
+      <el-button @click="save">确 定</el-button>
+    </div>
+  </el-dialog>
+</template>
+
+<script>
+  import { _debounce } from "@/global"
+  import stageView from './stageView'
+    export default {
+        name: "editNursingPath",
+
+        components:{ stageView },
+
+        props:['INPATIENT_NUMBER'],
+
+        data(){
+          return{
+            popshow : false,
+            title : '编辑护理计划',
+            target_current : -1,
+            target_current_class : -1,
+            deletTargetArr : [],
+            editData : {
+              DIS_NAME:'',
+              TARGET:[],STAGE:[]
+            },
+            stage_current : -1,
+            currentTab : 0,
+            options : [],
+            dis_id : '',
+
+            filterText:'',
+            defaultProps: {
+              children: 'P_VALUE',
+              label: 'NAME'
+            },
+            arrTreech:'',
+            fewDat:'',
+            thaDat:'',
+            inpuBlurs:false,
+
+          }
+        },
+
+      watch: {
+        filterText(val) {
+          this.$refs.tree.filter(val);
+        },
+
+        'popshow'(val, oldVal){
+          if(val == false){
+            this.$parent.getData()
+          }
+        },
+      },
+
+        methods:{
+          childByValue: function (childValue) {
+            this.fewDat = childValue
+          },
+          childthaValue: function (childValue) {
+            this.thaDat = childValue
+          },
+          filterNode(value, data) {
+            if (!value) return true;
+            return data.NAME.indexOf(value) !== -1;
+          },
+          handleNodeClick(data) {
+            this.arrTreech = data
+            this.currentTab = 0
+            this.editData.DIS_NAME = this.arrTreech.NAME
+              console.log("树形选中",this.arrTreech);
+            this.getSer('datacenter/nursingplan/getdisplan',{id:this.arrTreech.ID},res=>{
+              console.log('疾病列表',res)
+            let edit = res.data
+            this.editData.DIS_ID = edit.DIS_ID
+            this.editData.DIS_NAME = edit.DIS_NAME
+            this.editData.ID = edit.ID
+            this.editData.TARGET = []
+            edit.DATA.forEach(item =>{
+              item.EXECUTE_ORDER =item.EXECUTE_ORDER.filter(function(e){return e.replace(/(^\s*)|(\s*$)/g, "")})
+              item.HEALTH_NOTES =item.HEALTH_NOTES.filter(function(e){return e.replace(/(^\s*)|(\s*$)/g, "")})
+            })
+            this.editData.STAGE = edit.DATA
+            edit.TARGET.forEach((item,i)=>{
+            this.editData.TARGET.push({ID:'',STATUS:'',TARGET:item})
+            })
+          })
+          },
+          save : _debounce(function () {
+            let DIS_ID = this.editData.DIS_ID
+            let DIS_NAME = this.editData.DIS_NAME
+            console.log("在院时间",this.fewDat,this.thaDat)
+            if (this.fewDat <=0 || this.fewDat =="") {
+              this.$message({type : 'warning',message : '住院天数不能为空'});
+              return
+            }
+            if(this.thaDat > this.fewDat){
+              this.$message({type : 'warning',message : '手术天数不能大于住院天数'});
+              return
+            }
+           /* if(this.inpuBlurs == true){
+              this.$message({type : 'warning',message : '预期目标不能为空'});
+              return
+            }*/
+
+            this.editData.TARGET.forEach((item,i) =>{
+              if(item.TARGET == null || item.TARGET.indexOf(" ") >= 0){
+              console.log("删除", item , i)
+              this.editData.TARGET.splice(i,1)
+              }
+            console.log("aaaaaaaaa", this.editData.TARGET)
+            })
+            let dleTar=[]
+            dleTar = this.editData.TARGET
+            console.log("saaaaa", dleTar)
+            if(this.title == '编辑护理计划'){
+              let id = this.editData.ID
+              let TARGET = JSON.stringify([...this.editData.TARGET , ...this.deletTargetArr])
+              let DATA = JSON.stringify(this.editData.STAGE)
+              console.log(DATA)
+              this._put('datacenter/nursingplan/'+id,{ id , DIS_ID , DIS_NAME , TARGET , DATA },res=>{
+                console.log(res);
+                if(res.status < 400){
+                  this.$message({type: 'success', message: '编辑成功!'});
+                  this.$parent.getData()
+                  this.popshow = false
+                }
+              })
+            }else{
+
+
+              let DIS_NAME = this.editData.DIS_NAME
+              if (DIS_NAME =="") {
+                this.$message({type : 'warning',message : '疾病名称不能为空'});
+                return
+              }
+
+              let NUMBER = this.INPATIENT_NUMBER
+              let TARGET = []
+              if(this.editData.TARGET instanceof Array){
+                this.editData.TARGET.forEach(item=>{
+                  TARGET.push(item.TARGET)
+                })
+              }
+              TARGET = JSON.stringify(TARGET)
+              let DATA = JSON.stringify(this.editData.STAGE)
+              this.post('datacenter/nursingplan',{NUMBER,DIS_ID,DIS_NAME,TARGET,DATA},res=>{
+                console.log(res)
+                if(res.status < 400){
+                  this.$message({type: 'success', message: '新增成功!'})
+                  this.$parent.getData()
+                  this.popshow = false
+                }
+              })
+            }
+          }),
+          focusTargetDiv(index){
+            this.target_current_class = index
+            this.target_current = -1
+          },
+          deleteTarget(){
+            if(this.editData.TARGET.length!=0){
+              console.log("22",this.editData.TARGET)
+              if(this.editData.TARGET[this.target_current_class].ID){ //有ID则表示是后台数据删除时需要加标记
+                this.editData.TARGET[this.target_current_class].IS_DELETE = 1
+                this.deletTargetArr.push(this.editData.TARGET[this.target_current_class])
+              }
+              this.editData.TARGET.splice(this.target_current_class , 1)
+            }
+
+          },
+          setData(data){
+            this.title = '编辑护理计划'
+            let editData = { ...data }
+            this.popshow = true
+            this.editData = editData
+            this.currentTab = 0
+            console.log("编辑护理计划",this.editData)
+          },
+          emptyData(){
+            this.editData.DIS_NAME=''
+            this.popshow = true
+            this.title = '新增护理计划'
+            this.editData.TARGET = []
+            this.editData.STAGE = []
+            this.dis_id = ''
+            this.currentTab = 0
+          },
+          addTarget(){
+
+              if (this.editData.TARGET.length == 0) {
+                this.editData.TARGET.push({ID: '', TARGET: ''})
+              } else {
+                this.editData.TARGET[this.editData.TARGET.length - 1].TARGET != '' ? this.editData.TARGET.push({
+                  ID: '',
+                  TARGET: ''
+                }) : null
+              }
+              this.target_current = this.editData.TARGET.length - 1
+          },
+          inpuBlur(row){
+            console.log("ssss",row)
+            if(row != ""){
+              this.target_current = -1
+              this.inpuBlurs = false
+            }else{
+              this.inpuBlurs = true
+            }
+          },
+          addStage(){
+            console.log(1);
+
+            let obj = {
+              EXECUTE_ORDER:[],
+              FEW_DATS:'1',
+              HEALTH_NOTES:[],
+              ID:'',
+              STAGE_NUMBER:this.editData.STAGE.length+1,
+              THAT_DAY:{DAYS: "",TYPE: ""}
+            }
+            this.editData.STAGE.push(obj)
+
+          },
+          selectData(id){
+            this.options.forEach(item=>{
+              if(item.ID == id){
+                this.emptyData()
+                this.dis_id = id
+                this.editData.DIS_ID = id
+                this.editData.DIS_NAME = item.NAME
+                if(item.TARGET instanceof Array){
+                  item.TARGET.forEach(target=>{
+                    this.editData.TARGET.push({TARGET:target,ID:''})
+                  })
+                }else{
+                  item.TARGET = []
+                }
+
+                if(item.STAGE instanceof Array){
+                  console.log(item)
+                  item.STAGE.forEach(stage=>{
+                    let order_arr = []
+                    let notes_arr = []
+                    if(stage.EXECUTE_ORDER instanceof Array){
+                      stage.EXECUTE_ORDER.forEach(order=>{
+                        order_arr.push({EXECUTE_ORDER:order,ID:''})
+                      })
+                    }
+                    stage.EXECUTE_ORDER = order_arr
+                    if(stage.HEALTH_NOTES instanceof Array){
+                      stage.HEALTH_NOTES.forEach(notes=>{
+                        notes_arr.push({HEALTH_NOTES:notes,ID:''})
+                      })
+                    }
+                    stage.HEALTH_NOTES = notes_arr
+                  })
+                }
+                this.editData.STAGE = item.STAGE
+
+              }
+            })
+          }
+        },
+
+        mounted(){
+          this.$nextTick(()=>{
+            this.getSer('datacenter/nursingplan/adisease',{},res=>{
+              console.log(res,'疾病列表')
+              this.options = res.data.items
+            })
+          })
+        }
+
+
+    }
+</script>
+
+<style scoped lang='stylus'>
+  .treeList
+    height 500px
+    overflow auto
+    &::-webkit-scrollbar
+      width 7px
+      height 1px
+    &::-webkit-scrollbar-thumb
+      background-color #00B3DC
+      border-radius 10px
+    &::-webkit-scrollbar-track
+      background-color #dff4f9
+  .dis-name
+    label
+      font-size 16px
+    .el-input
+      width 310px
+      margin-left 10px
+      &>>>.el-input__inner
+        width 310px
+        background-color #F9F9FB
+  .expect
+    margin-top 10px
+    ul
+      background-color #F9F9FB
+      border 1px solid #dddddd
+      border-radius 4px
+      min-height 40px
+      li
+        line-height 40px
+        div
+          padding-left 10px
+        .target_current
+          background-color #DDEFF9
+          border none
+          outline none
+        .el-input
+          width 666px
+          margin 10px 0
+  .stage
+    .stage-list
+      .tab
+        width 66px
+        line-height 30px
+        height 28px
+        display inline-block
+        background-color #DDEFF9
+        margin-left 10px
+        border-radius 5px 5px 0 0
+        text-align center
+        color #00B3DC
+        &.current-tab
+          background-color #00B3DC
+          color #FFFFFF
+      li
+        display inline-block
+        .el-button
+          padding 0
+          border none
+        .el-icon-plus
+          color #11C462
+          width 66px
+          text-align center
+          font-size 16px
+
+  .el-button--text
+    color #00B3DC
+    font-weight bold
+    &>>>span
+      font-size 16px
+  .icon-btn
+    float right
+    border none
+    padding 0
+    margin 12px 8px
+    i
+      font-size 20px
+    .el-icon-circle-plus-outline
+      color #11C462
+    .el-icon-edit
+      color #00B3DC
+    .el-icon-delete
+      color #E63922
+</style>
+

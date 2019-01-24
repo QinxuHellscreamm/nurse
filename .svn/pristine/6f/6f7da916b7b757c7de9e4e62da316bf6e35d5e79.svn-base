@@ -1,0 +1,133 @@
+<template>
+    <div class="pro-ri">
+      <div  class="pro-ribot">
+        <p style="line-height: 50px;padding-left: 20px;">医嘱执行记录</p>
+        <el-table
+          ref="multipleTable"
+          :data="execRecord"
+          tooltip-effect="dark"
+          @row-contextmenu='rightClick'
+          style="width: 100%">
+         <!-- <el-table-column type="selection" min-width="32"></el-table-column>-->
+          <el-table-column prop="EXEC_DATE" label="执行时间" width="150"></el-table-column>
+          <el-table-column prop="ACTUAL_EXEC_TIME" label="实际执行时间" width="150"></el-table-column>
+          <el-table-column prop="EXEC_USER_NAME" label="执行人" width="100"></el-table-column>
+          <el-table-column prop="ID" label="姓名" width="140"></el-table-column>
+          <!--成组的情况-->
+          <el-table-column  label="" width="50">
+            <template slot-scope="scope">
+              <span :class="scope.row.pair==1?'pairGod':''"></span>
+            </template>
+          </el-table-column>
+          <el-table-column prop="PROJECT_NAME" label="医嘱内容" width="180"></el-table-column>
+          <el-table-column prop="SINGLE_DOSE_STR" label="用量" min-width="100"></el-table-column>
+          <el-table-column prop="USAGE" label="用法" min-width="110" show-overflow-tooltip></el-table-column>
+          <el-table-column prop="CHANNEL" label="途径" min-width="80"></el-table-column>
+          <el-table-column prop="ENTRUST" label="嘱托" min-width="150"></el-table-column>
+        </el-table>
+       <!-- <div class="botBtn">
+          <el-button type="primary" size="small">校对计费</el-button>
+        </div>-->
+      </div>
+      <div class="fixed" ref='fix' v-show='fixShow' @mouseout='out'>
+        <div class='edit' @click='edit'>修改</div>
+        <!--<div @click='del'>删除</div>-->
+      </div>
+      <el-dialog :visible.sync="popshow" title='医嘱执行记录' width='600px'>
+        <div>
+          <p style="margin-bottom: 14px;"><span style="margin-right:10px;">实际执行时间</span><span>{{obj.ACTUAL_EXEC_TIME}}</span></p>
+          <label>修改时间</label>
+          <el-time-picker
+            v-model="startTime"
+            type="time"
+            placeholder="选择日期时间">
+          </el-time-picker>
+          <div style="padding-top: 20px;text-align: right;">
+            <el-button @click="popshow = false">取 消</el-button>
+            <el-button type="primary" @click="addNewGrant">确 定</el-button>
+          </div>
+        </div>
+
+      </el-dialog>
+    </div>
+</template>
+<script>
+    export default{
+      props : ['execRecord'],
+
+        data(){
+            return {
+              popshow : false,
+              input:'',
+              fixShow : false,
+              startTime:"",
+              obj:[],
+            }
+        },
+
+
+      methods:{
+        rightClick(obj,e){
+          e.preventDefault()
+          console.log("2222",obj,e)
+          this.obj = obj
+          this.fixShow = true
+          this.$refs.fix.style.left = e.clientX - 40 + 'px'
+          this.$refs.fix.style.top = e.clientY - 30 + 'px'
+          this.fixShow = true
+        },
+        out(e){
+          if(e.toElement.className == 'right' || e.toElement.className == 'cell' || e.toElement.lastChild.className == 'cell') this.fixShow = false
+        },
+        edit(){
+          this.popshow = true
+          this.fixShow = false
+        },
+        del(){
+          /*this.fixShow = false
+          this.$refs.addRecord.setData(this.obj.ID)*/
+        },
+        addNewGrant(){
+
+        },
+      },
+    }
+</script>
+<style scoped lang='stylus'>
+  .pro-ri
+    float left
+    width 80%
+    background #fff
+    border-left 1px solid #D8E3E7
+    box-sizing border-box
+  .botBtn
+    text-align right
+    margin 20px
+  .el-table>>> td, .el-table>>> th.is-leaf
+    border-bottom 4px solid #FFF
+    padding 5px 0
+  .el-table>>> tr
+    background-color #F9F9FB
+  .pairGod
+    border 2px solid red
+    width 12px
+    height 10px
+    display inline-block
+    vertical-align middle
+    border-right none
+  .fixed
+    position fixed
+    width 80px
+    height 30px
+    background-color #FFFFFF
+    border 1px solid #dddddd
+    z-index 2000
+    div
+      height 30px
+      line-height 30px
+      text-align center
+      &:hover
+        background-color #ddeff9
+    .edit
+      border-bottom 1px solid #dddddd
+</style>

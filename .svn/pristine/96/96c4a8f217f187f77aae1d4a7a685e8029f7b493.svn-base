@@ -1,0 +1,150 @@
+<template>
+    <div>
+      <div class='serch_box'>
+        <input type="search" placeholder="搜索标题" class="out-input marr20"  v-model='va'/>
+        <el-button type="primary" size='medium' @click="pageAjax()">搜索</el-button>
+        <el-button type="primary" size='small' @click='show'>新增</el-button>
+      </div>
+      <div class="vitalist-content">
+        <div class='out-main'>
+          <el-table :data="LIST" style="width: 100%" class='table-custom'>
+            <el-table-column  prop="ID" label="ID" min-width="80"></el-table-column>
+            <el-table-column prop="TITLE" label="模板标题" min-width="80"></el-table-column>
+            <el-table-column label="关联科室" min-width="300" class='custom-table' prop='DEPA_DATA'></el-table-column>
+            <el-table-column label="添加时间" min-width="150"><template slot-scope="{row}"><span>{{row.CREATED_AT| stampTotime}}</span></template></el-table-column>
+            <el-table-column prop="CREATED_USER_NAME" label="操作人" min-width="100"></el-table-column>
+            <el-table-column prop="FATHER_NAME" label="操作" min-width="380">
+              <template slot-scope="{row}">
+                <el-button type="text" size="small" @click='view(row.ID)'>查看</el-button>
+                <el-button type="text" size="small" @click='edit(row.ID)'>编辑</el-button>
+                <el-button type="text" size="small" @click='del(row.ID)'>删除</el-button>
+              </template>
+            </el-table-column>
+          </el-table>
+        </div>
+        <div class="block" style="margin:20px 0;">
+          <el-pagination
+            background
+            @current-change="handleCurrentChange"
+            :current-page="currentPage1"
+            :page-size="20"
+            layout="total, prev, pager, next, jumper"
+            :total="adicsCount">
+          </el-pagination>
+        </div>
+      </div>
+      <add ref='child'></add>
+    </div>
+</template>
+
+<script>
+    import add from './addTemperature'
+
+    export default {
+
+      name: "temperatureChartAdmin",
+
+      components:{ add },
+
+      data(){
+        return {
+          LIST : [],
+          adicsCount : 0 ,
+          va : '',
+          currentPage1 : 1
+        }
+      },
+
+      methods:{
+        show(){
+          this.$refs.child.dialogTableVisible = true
+          this.$refs.child.dialogTitle = '新增体温单'
+          this.$refs.child.department = []
+          this.$refs.child.dynamicTags = { values : [] , ids : [] }
+          this.$refs.child.vitalSigns = []
+          this.$refs.child.tit = ''
+          this.$refs.child.select_flag = true
+        },
+        edit(id){
+          this.$refs.child.dialogTitle = '编辑体温单'
+          this.$refs.child.getData(id)
+        },
+        view(id){
+          this.$refs.child.getData(id)
+          this.$refs.child.dialogTitle = '查看体温单'
+        },
+        del(id){
+            this.$confirm('是否删除该体温单?', '提示', {
+                confirmButtonText: '确定',
+                cancelButtonText: '取消',
+            }).then(() => {
+                this._delete('datacenter/twtemplate/' + id , { id } , res => {
+                  if(res.status == 204){
+                      this.$message({type: 'success', message: '删除成功!'});
+                      this.pageAjax()
+                  }
+                })
+            })
+        },
+        pageAjax(){
+          this.getSer("datacenter/twtemplate" , {
+            title : this.va,
+            page : this.currentPage1 ,
+            'per-page' : 20
+          },res=>{
+            console.log(res)
+            if(res.status <= 400){
+              this.LIST = res.data.items;
+              this.adicsCount = parseInt(res.data.meta.totalCount);
+              console.log(this.adicsCount)
+            }
+          })
+        },
+        handleCurrentChange(val) {
+          this.currentPage1 = val
+          this.pageAjax();
+        }
+      },
+
+      mounted(){
+        this.$nextTick(()=>{
+          this.pageAjax('',this.currentPage1)
+        })
+      },
+    }
+</script>
+
+<style scoped lang="stylus">
+  .serch_box
+    margin 25px 0 16px 0
+    .el-input
+      width 310px
+    .el-button--medium
+      padding 12px 12px
+    .el-button--small
+      padding 12px 12px
+      background-color #11C462
+      border-color #11C462
+      float right
+      &:hover
+        background-color #14d462
+        border-color #14d462
+  .vitalist-content
+    width 100%
+    min-height 700px
+    padding 10px 20px
+    background #fff
+    -webkit-box-shadow 0 0 10px 0 rgba(0,0,0,0.04)
+    box-shadow 0 0 10px 0 rgba(0,0,0,0.04)
+    border-radius 4px
+    -webkit-box-sizing border-box
+    box-sizing border-box
+
+    .table-custom>>>.is-scrolling-none td
+      border-bottom 8px solid #fff
+  .el-table >>>.cell
+    overflow hidden
+
+
+
+</style>

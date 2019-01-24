@@ -1,0 +1,328 @@
+<template>
+    <div>
+      <el-dialog :visible.sync="popshow" width='960px' class='custom'>
+        <div slot='title'>
+          <span class="el-dialog__title">生命体征录入</span>
+          <div class='patient_detile'>
+            <span>{{detile.BED_NUMBER}}</span>
+            <span>{{detile.NAME}}</span>
+            <span>{{detile.SEX}}</span>
+            <span>{{detile.AGE}}</span>
+            <span>住院号:</span><span>{{detile.INPATIENT_NUMBER}}</span>
+            <el-date-picker v-model="dateValue" align="right" type="date" placeholder="选择日期" value-format='yyyy-MM-dd' :picker-options="pickerOptions"></el-date-picker>
+            <!--<el-button type="text" @click='opationShow' class='opation'>体温单配置</el-button>-->
+          </div>
+        </div>
+
+        <div style='border:1px solid #D8E3E7 ;border-right:none;border-bottom:none'>
+          <table cellspacing="0" width='920' align="center">
+            <thead>
+            <tr>
+              <th style='width: 16%;border:1px solid #D8E3E7 ;height: 36px;border-left:none;border-top:none'>体征项</th>
+              <th v-for='item of date' :style="{width: 84/date.length+'%',border:'1px solid #D8E3E7',borderLeft:'none',borderTop:'none'}" >{{item}}</th>
+            </tr>
+            </thead>
+          </table>
+          <table cellspacing="0" width='920' align="center" v-for='(item,index) of tableList' class='costom-table'>
+            <tbody>
+            <tr>
+              <th height='36px' style='width: 16% ;border:1px solid #D8E3E7;border-top: none;border-left:none;'>{{item.NAME}}</th>
+              <th v-for='itemVlaue of item.ITEMS' :style="{border:'1px solid #D8E3E7',borderLeft:'none',borderTop:'none'}">
+                <!--<div v-if='item.type == 2' @click='dialogShow'>&lt;!&ndash;评估单&ndash;&gt;-->
+                  <!--<el-input readonly v-model='itemVlaue.value'></el-input>-->
+                <!--</div>-->
+                <div v-if='item.SIGN_CODE != "T10700" && item.SIGN_CODE != "T10900"'>
+                  <template v-for='(sub,subindex) of item.SIGN_SUB'>
+                    <el-input v-model='itemVlaue[subindex+1].VS_VALUE' v-if='sub.INPUT_TYPE_CODE == "01" || sub.INPUT_TYPE_CODE == "02"' @change='type_update(itemVlaue[subindex+1],sub.VALIDATION_RULE)' :maxlength='sub.INPUT_LENGTH' :class="{'err':itemVlaue[subindex+1].err}"></el-input>
+                    <span v-if='sub.SIGN_CODE == "T10601"'>/</span>
+                    <el-select v-model='itemVlaue[subindex+1].VS_VALUE' placeholder='' v-if='sub.INPUT_TYPE_CODE == "03"'>
+                      <el-option v-for='itemO of sub.OPTION_LIST' :key="itemO.code" :label="itemO.name" :value="itemO.code"></el-option>
+                    </el-select>
+                    <el-autocomplete
+                      v-if='sub.INPUT_TYPE_CODE == "04"'
+                      class="inline-input"
+                      v-model="itemVlaue[subindex+1].VS_VALUE"
+                      :fetch-suggestions="querySearch_input"
+                      placeholder=""
+                      :maxlength='Number(sub.INPUT_LENGTH)'
+                      @select="handleSelect_input"
+                      @blur='type_update(itemVlaue[subindex+1],sub.VALIDATION_RULE)'
+                      :class="{'err':itemVlaue[0].err}">
+                    </el-autocomplete>
+                  </template>
+                  <el-select v-model='itemVlaue[0].VS_VALUE' v-if='item.INPUT_TYPE_CODE == "03"'>
+                    <el-option v-for='itemO of item.OPTION_LIST' :key="itemO.code" :label="itemO.name" :value="itemO.code"></el-option>
+                  </el-select>
+                  <el-input v-model='itemVlaue[0].VS_VALUE' v-if='item.INPUT_TYPE_CODE == "01" || item.INPUT_TYPE_CODE == "02"' :maxlength='item.INPUT_LENGTH' :class="{'err':itemVlaue[0].err}"></el-input>
+                  <el-autocomplete
+                    v-if='item.INPUT_TYPE_CODE == "04"'
+                    class="inline-input"
+                    v-model="itemVlaue[0].VS_VALUE"
+                    :fetch-suggestions="querySearch_input"
+                    placeholder=""
+                    @focus='focus(item,itemVlaue[0].VS_VALUE)'
+                    :maxlength='Number(item.INPUT_LENGTH)'
+                    @select='type_update(itemVlaue[0],item.VALIDATION_RULE,item.NAME)'
+                    @blur='type_update(itemVlaue[0],item.VALIDATION_RULE,item.NAME)'
+                    :class="{'err':itemVlaue[0].err}">
+                  </el-autocomplete>
+                </div>
+                <div v-if='item.SIGN_CODE == "T10700"' class='t10700'>
+                  <template v-for='(sub,subindex) of item.SIGN_SUB'>
+                    <el-select v-model='itemVlaue[subindex+1].VS_VALUE' placeholder='' v-if='sub.INPUT_TYPE_CODE == "03"' @change='change_t10700' @focus='focus_t10702(itemVlaue)'>
+                      <el-option v-for='itemO of sub.OPTION_LIST' :key="itemO.code" :label="itemO.name" :value="itemO.code"></el-option>
+                    </el-select>
+                    <el-input v-model='itemVlaue[subindex+1].VS_VALUE' v-show='sub.INPUT_TYPE_CODE == "01" || sub.INPUT_TYPE_CODE == "02"' :maxlength='sub.INPUT_LENGTH' v-if='sub.SIGN_CODE != T10702' @change='type_update(itemVlaue[subindex+1],sub.VALIDATION_RULE)' :class="{'err':itemVlaue[0].err}"></el-input>
+                  </template>
+                  <el-input v-model='itemVlaue[0].VS_VALUE' v-if='item.INPUT_TYPE_CODE == "01" || item.INPUT_TYPE_CODE == "02"' :maxlength='item.INPUT_LENGTH' @change='type_update(itemVlaue[0],item.VALIDATION_RULE)' :class="{'err':itemVlaue[0].err}"></el-input>
+                </div>
+                <div v-if='item.SIGN_CODE=="T10900"'>
+                  <template v-for='(sub,subindex) of item.SIGN_SUB'>
+                    <el-select v-model='itemVlaue[subindex+1].VS_VALUE' placeholder='' v-if='sub.INPUT_TYPE_CODE == "03"' :maxlength='sub.INPUT_LENGTH' @change='change_t10900' @focus='focus_t10900(itemVlaue)'>
+                      <el-option v-for='itemO of sub.OPTION_LIST' :key="itemO.code" :label="itemO.name" :value="itemO.code"></el-option>
+                    </el-select>
+                    <el-input v-model='itemVlaue[subindex+1].VS_VALUE' v-show='sub.INPUT_TYPE_CODE == "01" || sub.INPUT_TYPE_CODE == "02"' @change='type_update(itemVlaue[subindex+1],sub.VALIDATION_RULE)' :class="{'err':itemVlaue[0].err}"></el-input>
+                  </template>
+                  <el-input v-model='itemVlaue[0].VS_VALUE' v-if='item.INPUT_TYPE_CODE == "01" || item.INPUT_TYPE_CODE == "02"' :maxlength='item.INPUT_LENGTH' @change='type_update(itemVlaue[0],item.VALIDATION_RULE)' :class="{'err':itemVlaue[0].err}"></el-input>
+                </div>
+              </th>
+            </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div slot="footer" class="dialog-footer">
+          <el-button @click="save" type='primary'>保存</el-button>
+          <el-button @click="saveAndClose" type='primary'>保存并关闭</el-button>
+        </div>
+        <sign-build-record ref='alertDialog' :INPATIENT_NUMBER='detile.INPATIENT_NUMBER' :id='id' :re_code='re_code'></sign-build-record>
+      </el-dialog >
+      <!--<thermometerOpation ref='thermometerOpation' :TEMPLATE_ID='id' :detile='detile' :date='dateValue'></thermometerOpation>-->
+    </div>
+</template>
+
+<script>
+  // import thermometerOpation from './thermometerOpation'
+  import signBuildRecord from '@/pages/workstation/component/signBuildRecord'
+  import { _debounce } from "@/global"
+
+    export default {
+        name: "signEntry",
+
+        components : { signBuildRecord },//thermometerOpation
+
+        props : ['detile','id','re_code'],
+
+        data(){
+          return{
+            popshow : false,
+            tableList : [],
+            dateValue : '',
+            T10702 : 'T10702',
+            arr_t10700 : [],
+            arr_t10900 : [],
+            pickerOptions : {
+
+            },
+            tables : {
+              label : ['2:00','6:00','10:00','14:00','18:00','22:00'],
+            },
+            row : {},
+            TEMPLATE_ID : '',
+            date:['02:00','06:00','10:00','14:00','18:00','22:00'],
+          }
+        },
+
+        methods : {
+          change_t10700(val){
+            console.log(val);
+            val != 3 ? this.T10702 = 'T10702' : this.T10702 = ''
+            val != 3 ? this.arr_t10700[2].VS_VALUE = '' : null
+            val == 1 ? this.arr_t10700[3].VS_VALUE = '0' : null
+          },
+          focus_t10702(val){
+            console.log(val)
+            this.arr_t10700 = val
+          },
+          change_t10900(val){
+            console.log(val)
+            val == 1 ? this.arr_t10900[0].VS_VALUE = '0' : null
+          },
+          focus_t10900(val){
+            console.log(val)
+            this.arr_t10900 = val
+          },
+
+          type_update(data,VALIDATION_RULE,NAME){
+            data.err = false
+            if(data.VS_VALUE == '') return
+            if(VALIDATION_RULE && VALIDATION_RULE.max && VALIDATION_RULE.min){
+              if(isNaN(data.VS_VALUE)){
+                data.err = true
+                return
+              }
+              if(data.VS_VALUE > Number(VALIDATION_RULE.max)) data.err = true
+              else if(data.VS_VALUE < Number(VALIDATION_RULE.min)) data.err = true
+              else data.err = false
+              if(data.err == true) return
+
+              data.VS_VALUE = Number(data.VS_VALUE).toFixed(Number(VALIDATION_RULE.decimal))
+              if(this.value  == data.VS_VALUE) return
+              this.$refs.alertDialog.getData(data,NAME)
+            }
+          },
+          focus(data,value){
+            console.log(data);
+            this.row = data
+            this.value = value.toString()
+          },
+          saveAndClose(){
+            this.save(()=> {
+              this.popshow = false
+              this.$refs.alertDialog.innerVisible = false
+            })
+          },
+          save : _debounce(function (callback) {
+            if(!this.dateValue){
+              this.$message({ type: 'warning', message : '请选择时间'})
+              return
+            }
+            var objData = {}
+            objData[this.detile.INPATIENT_NUMBER] = {}
+            objData[this.detile.INPATIENT_NUMBER] = []
+            this.tableList.forEach(id => {
+              id.ITEMS.forEach(item=>{
+                item.forEach(val=>{
+                  objData[this.detile.INPATIENT_NUMBER].push({ value:val.VS_VALUE, key:val.key, code:val.VS_CODE, is_input:1 })
+                })
+              })
+            })
+
+            this.post('datacenter/twtemplateuser' , { data : JSON.stringify(objData) , date : this.dateValue,inpatient_number: this.detile.INPATIENT_NUMBER},res=>{
+              console.log(res);
+              if(res.status<400){
+                this.$message({ type: 'success', message : '保存成功'})
+                typeof callback == "function" ? callback(): null
+                this.$parent.getData()
+              }
+            })
+          }),
+          createFilter(queryString) {
+            return (restaurant) => {
+              return (restaurant.name.toLowerCase().indexOf(queryString.toLowerCase()) === 0);
+            };
+          },
+          querySearch_input(queryString, cb) {
+            this.row.OPTION_LIST.forEach(item=>{
+              item.value = item.code
+            })
+            var restaurants = this.row.OPTION_LIST
+            var results = queryString ? restaurants.filter(this.createFilter(queryString)) : restaurants
+            cb(results);
+          },
+          getData(){
+            this.flag = false
+            console.log({ id : this.id , inpatient_number : this.detile.INPATIENT_NUMBER , date : this.dateValue })
+            this.getSer('datacenter/twtemplateuser/' + this.id,{ id : this.id , inpatient_number : this.detile.INPATIENT_NUMBER , date : this.dateValue },res=>{
+              console.log('病人体温单')
+              console.log(res)
+              this.tableList = []
+              this.TEMPLATE_ID = res.data.ID
+
+              res.data.TEMPLATE.forEach(item=>{
+
+                let arr = []
+                for(var k in item.ITEMS){
+                  for(var i in item.ITEMS[k]){
+                    if(item.ITEMS[k][i].VS_CODE == 'T10101' || item.ITEMS[k][i].VS_CODE == 'T10201') item.ITEMS[k][i].VS_VALUE == '' ? item.ITEMS[k][i].VS_VALUE = '1' : null
+                    item.ITEMS[k][i].key = k
+                    item.ITEMS[k][i].err = false
+                  }
+                  arr.push(Object.values(item.ITEMS[k]))
+                }
+                item.ITEMS = arr
+                this.tableList.push(item)
+              })
+
+            })
+          },
+          handleSelect_input(item) {
+            console.log(item);
+          },
+
+        },
+
+        created(){
+          this.$nextTick(()=>{
+            var str = ''
+            let date = new Date()
+            let y = date.getFullYear()
+            let m = date.getMonth() + 1 > 9 ? date.getMonth() + 1 : '0'+ (date.getMonth() + 1)
+            let d = date.getDate() > 9 ? date.getDate() : '0' + date.getDate()
+            console.log(d)
+            str = y + '-' + m + '-' + d
+            this.dateValue = str
+
+            //时间插件 值域
+            let INPATIENT_AREA_DATE = this.detile.INPATIENT_AREA_DATE
+            console.log(INPATIENT_AREA_DATE);
+            this.pickerOptions.disabledDate = function (time) {
+              return time.getTime() > Date.now() || time.getTime() < new Date(INPATIENT_AREA_DATE).getTime() - 86400000
+            }
+          })
+        },
+
+        watch:{
+          'dateValue' : function (to) {
+            this.getData()
+          },
+        }
+    }
+</script>
+
+<style scoped lang='stylus'>
+  .custom
+    &>>>.el-dialog__body
+      padding 10px 20px 30px
+  .el-dialog
+    .patient_detile
+      margin-top 22px
+      span
+        font-size 18px
+        font-weight 700
+        color #2B3A50
+        margin-right 10px
+    .costom-table
+       .el-input,.el-autocomplete
+         width 45%
+         &>>>.el-input__inner
+           /*border none*/
+           height 30px
+           padding 0 5px
+           font-weight bold
+           background-color #f9f9fb
+           &::-webkit-outer-spin-button,&::-webkit-inner-spin-button
+             -webkit-appearance none
+       .t10700
+         .el-input
+            width 22.3%
+       &>>>.err
+         input
+           border 1px solid #D8E3E7!important
+    .el-select
+      width 45%
+      height 30px
+      .el-input
+        width 100%
+      &>>>.el-input__inner
+        font-size 12px
+        height 30px
+        line-height 30px
+        padding 0 15px 0 5px
+      &>>>.el-input__suffix
+        .el-input__icon
+          line-height 20px
+  .el-autocomplete-suggestion
+    li
+      padding 0 10px
+</style>

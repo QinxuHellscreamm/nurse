@@ -15,7 +15,7 @@
         <!--<el-button @click='paging.direction ="down" ;pageinfo.page = pageinfo.page+1; weiwatch++ ' icon='el-icon-caret-right' size='mini' circle></el-button>-->
       </div>
 
-      <div ref='print' style='width: 800px;text-align: center;' v-if='print_zh == 3'>
+      <div ref='print' style='width: 100%;' v-if='print_zh == 3'>
         <div ref='label' style='width: 100%;'>
           <h1 style='font-size: 20px;text-align: center; margin: 0 0 20px'>{{TEMPLATE_NAME}}</h1>
           <div class="from-header" style='border: none;' v-if='HEADER2.length'>
@@ -32,11 +32,11 @@
           </div>
         </div>
         <div class='no-out-main'>
-          <el-table :data='LIST2' @row-contextmenu='rightClick' :row-style="tableRowStyle">
-            <el-table-column :label="item.NODE_NAME"  :prop='item.ID' min-width="10" v-for='(item,index) of tables' :key='index' :width='item.INPUT_MODE == 2 ? 160 : item.VS_ITEM_CODE == "T10600" ? 60 : "" || item.ID == -1 ? "40" : ""' :align='item.INPUT_MODE == 2 ? "left" : "center"'><!--:width='item.INPUT_MODE == 2 ? 400 : ""'-->
-              <el-table-column v-for='item1 of item.CHILD' :label="item1.NODE_NAME" :prop='item1.ID' :key='item1.ID' min-width="10">
-                <el-table-column v-for='item2 of item1.CHILD' :label="item2.NODE_NAME" :prop='item2.ID' :key='item2.ID' min-width="10">
-                  <el-table-column v-for='item3 of item2.CHILD' :label="item3.NODE_NAME" :prop='item3.ID' :key='item3.ID' min-width="10"></el-table-column>
+          <el-table :data='LIST2' @row-contextmenu='rightClick' :row-style="tableRowStyle" style="width: 900px;">
+            <el-table-column :label="item.NODE_NAME"  :prop='item.ID' min-width="10" v-for='(item,index) of tables' :key='index' :width='item.INPUT_MODE == 2 ? 220 : item.VS_ITEM_CODE == "T10600" ? 60 : item.VS_ITEM_CODE == "T12400" ? 60 : item.VS_ITEM_CODE == "T12300" ? 20 : item.ID == -1 ? 38 : item.ID == -2 ? 60 : ""' :align='item.INPUT_MODE == 2 ? "left" : "center"'><!--:width='item.INPUT_MODE == 2 ? 400 : ""'-->
+              <el-table-column v-for='item1 of item.CHILD' :label="item1.NODE_NAME" :prop='item1.ID' :key='item1.ID' min-width="10" :width='item.INPUT_MODE == 2 ? 220 : item.VS_ITEM_CODE == "T10600" ? 60 : item.VS_ITEM_CODE == "T12400" ? 60 : item.VS_ITEM_CODE == "T12300" ? 20 : item.ID == -1 ? 38 : item.ID == -2 ? 60 : ""'>
+                <el-table-column v-for='item2 of item1.CHILD' :label="item2.NODE_NAME" :prop='item2.ID' :key='item2.ID' min-width="10" :width='item.INPUT_MODE == 2 ? 220 : item.VS_ITEM_CODE == "T10600" ? 60 : item.VS_ITEM_CODE == "T12400" ? 60 : item.VS_ITEM_CODE == "T12300" ? 20 : item.ID == -1 ? 38 : item.ID == -2 ? 60 : ""'>
+                  <el-table-column v-for='item3 of item2.CHILD' :label="item3.NODE_NAME" :prop='item3.ID' :key='item3.ID' min-width="10" :width='item.INPUT_MODE == 2 ? 220 : item.VS_ITEM_CODE == "T10600" ? 60 : item.VS_ITEM_CODE == "T12400" ? 60 : item.VS_ITEM_CODE == "T12300" ? 20 : item.ID == -1 ? 38 : item.ID == -2 ? 60 : ""'></el-table-column>
                 </el-table-column>
               </el-table-column>
             </el-table-column>
@@ -61,11 +61,11 @@
         </div>
         </div>
         <div class='no-out-main'>
-          <el-table :data='LIST2' @row-contextmenu='rightClick' :row-style="tableRowStyle">
-            <el-table-column :label="item.NODE_NAME"  :prop='item.ID' min-width="10" v-for='(item,index) of tables' :key='index' :width='item.INPUT_MODE == 2 ? 220 : item.VS_ITEM_CODE == "T10600" ? 60 : "" || item.ID == -1 ? "40" : ""' :align='item.INPUT_MODE == 2 ? "left" : "center"'><!--:width='item.INPUT_MODE == 2 ? 400 : ""'-->
-              <el-table-column v-for='item1 of item.CHILD' :label="item1.NODE_NAME" :prop='item1.ID' :key='item1.ID' min-width="10">
-                <el-table-column v-for='item2 of item1.CHILD' :label="item2.NODE_NAME" :prop='item2.ID' :key='item2.ID' min-width="10">
-                  <el-table-column v-for='item3 of item2.CHILD' :label="item3.NODE_NAME" :prop='item3.ID' :key='item3.ID' min-width="10"></el-table-column>
+          <el-table :data='LIST2' @row-contextmenu='rightClick' :row-style="tableRowStyle" style="width: 1160px;">
+            <el-table-column :label="item.NODE_NAME"  :prop='item.ID' min-width="10" v-for='(item,index) of tables' :key='index' :width='item.INPUT_MODE == 2 ? 220 : item.VS_ITEM_CODE == "T10600" ? 60 : item.VS_ITEM_CODE == "T12400" ? 60 : item.VS_ITEM_CODE == "T12300" ? 20 : item.ID == -1 ? 38 : item.ID == -2 ? 60 : ""' :align='item.INPUT_MODE == 2 ? "left" : "center"'><!--:width='item.INPUT_MODE == 2 ? 400 : ""'-->
+              <el-table-column v-for='item1 of item.CHILD' :label="item1.NODE_NAME" :prop='item1.ID' :key='item1.ID' min-width="10" :width='item.INPUT_MODE == 2 ? 220 : item.VS_ITEM_CODE == "T10600" ? 60 : item.VS_ITEM_CODE == "T12400" ? 60 : item.VS_ITEM_CODE == "T12300" ? 20 : item.ID == -1 ? 38 : item.ID == -2 ? 60 : ""'>
+                <el-table-column v-for='item2 of item1.CHILD' :label="item2.NODE_NAME" :prop='item2.ID' :key='item2.ID' min-width="10" :width='item.INPUT_MODE == 2 ? 220 : item.VS_ITEM_CODE == "T10600" ? 60 : item.VS_ITEM_CODE == "T12400" ? 60 : item.VS_ITEM_CODE == "T12300" ? 20 : item.ID == -1 ? 38 : item.ID == -2 ? 60 : ""'>
+                  <el-table-column v-for='item3 of item2.CHILD' :label="item3.NODE_NAME" :prop='item3.ID' :key='item3.ID' min-width="10" :width='item.INPUT_MODE == 2 ? 220 : item.VS_ITEM_CODE == "T10600" ? 60 : item.VS_ITEM_CODE == "T12400" ? 60 : item.VS_ITEM_CODE == "T12300" ? 20 : item.ID == -1 ? 38 : item.ID == -2 ? 60 : ""'></el-table-column>
                 </el-table-column>
               </el-table-column>
             </el-table-column>
@@ -227,8 +227,8 @@
 
           setTimeout(()=>{
             var LODOP = this.$getLodop()
-            var strLabelStyle="<style>h1{font-size: 20px;text-align:center;}.from-header{display:flex;padding:0 20px;font-size: 14px; height: 20px;} .from-header div{float:left;margin-right:25px; } .is-left>.cell{text-align:left}</style>";
-            var strTableStyle="<style>table{border-collapse:collapse;table-layout:fixed;} td,th {border-collapse:collapse; font-weight: normal;min-width:10px;text-align:center;font-size:14px;border: 1px solid #000;} td{ min-height: 45px; font-family: MicrosoftYaHei, 'Avenir', Helvetica, Arial, sans-serif;} .cell {padding:0;text-align: center;} .gutter{display: none} .is-left>.cell{text-align:left;word-break:break-all;font-size:14px;}</style>";
+            var strLabelStyle="<style>h1{font-size: 20px;text-align:center;}.from-header{display:flex;padding:0;font-size: 14px; height: 20px;float:left;} .from-header div{float:left;margin-right:5px; } .is-left>.cell{text-align:left}</style>";
+            var strTableStyle="<style>table{border-collapse:collapse;table-layout:fixed;} td,th {border-collapse:collapse; font-weight: normal;min-width:10px;text-align:center;font-size:14px;border: 1px solid #000;} td{ min-height: 45px; font-family: MicrosoftYaHei, 'Avenir', Helvetica, Arial, sans-serif;} .cell{word-break:break-all;text-align: center;} .gutter{display: none} .is-left>.cell{text-align:left;word-break:break-all;font-size:14px;}</style>";
 
             var custom_dom = this.$refs.print
             var thead = custom_dom.getElementsByClassName('el-table__header')[0].getElementsByTagName('thead')[0]
@@ -309,11 +309,11 @@
       max-height 760px
       overflow-y auto
       .from-header
-        padding 10px 20px
+        padding 10px 5px
         overflow hidden
         div
           float left
-          margin-right 25px
+          margin-right 10px
           label,span
             color #1A2C4E
             font-size 12px
@@ -345,6 +345,9 @@
         border-bottom 1px solid #dddddd
     .el-table
       border-top 1px solid #666
+      width auto
+      display inline-block !important
+      display inline
       &>>>.el-table__header-wrapper,&>>>.el-table__body-wrapper
         .cell
           font-size 12px

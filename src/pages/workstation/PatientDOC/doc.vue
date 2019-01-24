@@ -24,6 +24,7 @@
           <assessmentSheet v-if='docType.DOCTYPE == 1' :id='docType.ID' :INPATIENT_NUMBER='detile.INPATIENT_NUMBER' :docType='docType.DOCTYPE'></assessmentSheet>
           <record v-if='docType.DOCTYPE == 2' :id='docType.ID' :INPATIENT_NUMBER='detile.INPATIENT_NUMBER' :detile='detile'></record>
           <bloodSugar v-if='docType.TYPE == 96' :id='docType.ID' :INPATIENT_NUMBER='detile.INPATIENT_NUMBER' :detile='detile'></bloodSugar>
+          <bloodKetone v-if='docType.TYPE == 89' :id='docType.ID' :INPATIENT_NUMBER='detile.INPATIENT_NUMBER' :detile='detile'></bloodKetone>
           <notificationBook v-if='docType.DOCTYPE == 3' :id='docType.ID' :INPATIENT_NUMBER='detile.INPATIENT_NUMBER'></notificationBook>
           <adverseEvent :MEDICAL_RECORD_NUM='detile.MEDICAL_RECORD_NUM' :NAME="detile.NAME" :BED_NUMBER="detile.BED_NUMBER"
                         :detile='detile'
@@ -47,6 +48,7 @@
   import assessmentSheet from './component/assessmentSheet/assessmentSheet'//评估单&交接单
   import record from './component/record/record'//记录单
   import bloodSugar from './component/bloodSugar/bloodSugar'//血糖单
+  import bloodKetone from './component/bloodKetone/bloodKetone'//血酮单
   import adverseEvent from './component/adverseEvent'//护理不良事件报告单
   import notificationBook from './component/notificationBook'//告知书
   import health from './component/health/health'//健康宣教
@@ -63,7 +65,7 @@
 
     props : ['id'],
 
-    components : {TestRecode, CheckRecode, DoctorsAdvice, docSidebar, thermometer, assessmentSheet, record, nursingPlan, bloodSugar ,adverseEvent ,health,notificationBook ,processMap},
+    components : {TestRecode, CheckRecode, DoctorsAdvice, docSidebar, thermometer, assessmentSheet, record, nursingPlan, bloodSugar ,bloodKetone, adverseEvent ,health,notificationBook ,processMap},
 
     data(){
       return{

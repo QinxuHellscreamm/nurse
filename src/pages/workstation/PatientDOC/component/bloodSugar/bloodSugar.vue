@@ -16,7 +16,7 @@
           <el-table-column  prop="NURSING_AT" label="日期">
             <template slot-scope="{row}"><div>{{row.NURSING_AT}}</div></template>
           </el-table-column>
-          <el-table-column label="医院监测点">
+          <el-table-column label="医院检测点">
             <template slot-scope="{row}"><div>{{row.MONITORING_POINT | noticingPointName}}</div></template>
           </el-table-column>
           <el-table-column  prop="BLOOD_GLUCOSE_RECORD" label="血糖值（mmol/L）"></el-table-column>
